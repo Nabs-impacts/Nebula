@@ -1,0 +1,31 @@
+# Migrations Alembic — Nebula
+
+Ce dossier contient les migrations de schéma de base de données, générées et appliquées via Alembic.
+
+## Commandes utiles
+
+Créer une nouvelle migration à partir des changements de modèles :
+```bash
+alembic revision --autogenerate -m "description du changement"
+```
+
+Appliquer toutes les migrations en attente :
+```bash
+alembic upgrade head
+```
+
+Revenir à la migration précédente :
+```bash
+alembic downgrade -1
+```
+
+Voir l'historique des migrations :
+```bash
+alembic history
+```
+
+## Notes
+
+- La configuration se trouve dans `../alembic.ini` et `env.py`.
+- `env.py` importe automatiquement tous les modèles (`Entreprise`, `Utilisateur`, `Message`) pour qu'Alembic détecte les changements de schéma.
+- Toujours relire une migration auto-générée avant de l'appliquer en production.

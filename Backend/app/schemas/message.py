@@ -1,0 +1,40 @@
+import uuid
+from datetime import datetime
+
+from pydantic import BaseModel
+
+from app.models.message import CanalMessage, StatutEnvoi
+
+
+class MessageGenerationRequest(BaseModel):
+    entreprise_id: uuid.UUID
+    canal: CanalMessage
+    service_a_proposer: str
+    ton: str | None = "professionnel"
+
+
+class MessageCreate(BaseModel):
+    entreprise_id: uuid.UUID
+    canal: CanalMessage
+    contenu_genere: str
+    est_relance: bool = False
+
+
+class MessageUpdate(BaseModel):
+    contenu_final: str | None = None
+    statut_envoi: StatutEnvoi | None = None
+
+
+class MessageOut(BaseModel):
+    id: uuid.UUID
+    entreprise_id: uuid.UUID
+    canal: CanalMessage
+    contenu_genere: str
+    contenu_final: str | None
+    est_relance: bool
+    statut_envoi: StatutEnvoi
+    date_generation: datetime
+    date_envoi: datetime | None
+
+    class Config:
+        from_attributes = True

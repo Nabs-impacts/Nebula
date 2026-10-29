@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useAuth } from './hooks/useAuth'
 import Sidebar from './components/common/Sidebar'
 import Navbar from './components/common/Navbar'
+import ReponsesNotifier from './components/common/ReponsesNotifier'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import EntreprisesPage from './pages/EntreprisesPage'
@@ -35,6 +36,7 @@ function LayoutApplication({ children }) {
 
   return (
     <div className="min-h-screen bg-bg text-ink">
+      <ReponsesNotifier />
       <Sidebar ouvert={menuOuvert} onFermer={() => setMenuOuvert(false)} />
 
       <div className="flex min-h-screen min-w-0 flex-col lg:pl-64">

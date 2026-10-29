@@ -40,6 +40,8 @@ class Message(Base):
     contenu_genere: Mapped[str] = mapped_column(Text, nullable=False)
     contenu_final: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    identifiant_externe: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+
     est_relance: Mapped[bool] = mapped_column(default=False)
 
     statut_envoi: Mapped[StatutEnvoi] = mapped_column(

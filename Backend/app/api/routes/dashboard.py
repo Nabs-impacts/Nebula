@@ -8,6 +8,7 @@ from app.api.deps import get_current_user
 from app.db.base import get_db
 from app.models.entreprise import Entreprise, StatutProspection
 from app.models.message import Message, StatutEnvoi
+from app.models.reponse_recue import ReponseRecue
 from app.services import relance_service
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
@@ -117,6 +118,19 @@ def obtenir_actions(
         .all()
     )
 
+    ids_entreprises = [e.id for e in reponses]
+    dernieres_reponses: dict = {}
+    if ids_entreprises:
+        lignes_rep = (
+            db.query(ReponseRecue)
+            .filter(ReponseRecue.entreprise_id.in_(ids_entreprises))
+            .order_by(ReponseRecue.recu_le.desc())
+            .all()
+        )
+        for r in lignes_rep:
+            if r.entreprise_id not in dernieres_reponses:
+                dernieres_reponses[r.entreprise_id] = r
+
     return {
         "a_relancer": a_relancer,
         "brouillons": [
@@ -136,6 +150,8 @@ def obtenir_actions(
                 "nom": entreprise.nom,
                 "statut": entreprise.statut.value,
                 "date_mise_a_jour": entreprise.date_mise_a_jour.isoformat(),
+                "extrait": dernieres_reponses.get(entreprise.id).extrait if dernieres_reponses.get(entreprise.id) else None,
+                "non_lu": not dernieres_reponses.get(entreprise.id).lu if dernieres_reponses.get(entreprise.id) else False,
             }
             for entreprise in reponses
         ],

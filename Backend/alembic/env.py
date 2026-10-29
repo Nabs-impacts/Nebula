@@ -10,6 +10,7 @@ from app.db.base import Base
 from app.models.entreprise import Entreprise  # noqa: F401
 from app.models.utilisateur import Utilisateur  # noqa: F401
 from app.models.message import Message  # noqa: F401
+from app.models.reponse_recue import ReponseRecue  # noqa: F401
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url)

@@ -1,16 +1,18 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Building2, GripVertical } from 'lucide-react'
+import { Building2, CheckCircle2, GripVertical, XCircle } from 'lucide-react'
 import StatutBadge from './StatutBadge'
 import EmptyState from '../common/EmptyState'
-import { KANBAN_COLONNES, PRIORITE_COLORS, PRIORITE_LABELS, STATUT_LABELS } from '../../utils/formatters'
+import { useToast } from '../common/Toast'
+import { KANBAN_COLONNES, PRIORITE_COLORS, PRIORITE_LABELS } from '../../utils/formatters'
 import { staggerContainer, staggerItem } from '../../lib/motion'
 
 function CarteKanban({ entreprise, onChangerStatut, enCours }) {
   const navigate = useNavigate()
   const [survol, setSurvol] = useState(false)
   const priorite = PRIORITE_COLORS[entreprise.priorite] ?? PRIORITE_COLORS.normale
+  const estCloture = entreprise.statut === 'converti' || entreprise.statut === 'perdu'
 
   return (
     <motion.div
@@ -56,20 +58,31 @@ function CarteKanban({ entreprise, onChangerStatut, enCours }) {
         ))}
       </div>
 
-      <div className="mt-3" onClick={(e) => e.stopPropagation()}>
-        <select
-          className="w-full rounded-sm border border-border bg-surface px-2 py-1 text-[11px] text-muted outline-none focus:border-accent/60"
-          value={entreprise.statut === 'envoye' ? 'en_attente_reponse' : entreprise.statut}
-          onChange={(e) => onChangerStatut(entreprise.id, e.target.value)}
-          disabled={enCours}
-          aria-label={`Changer le statut de ${entreprise.nom}`}
-        >
-          {Object.entries(STATUT_LABELS).map(([valeur, label]) => (
-            <option key={valeur} value={valeur}>
-              {label}
-            </option>
-          ))}
-        </select>
+      <div className="mt-3 flex items-center justify-between border-t border-border/40 pt-2" onClick={(e) => e.stopPropagation()}>
+        <StatutBadge statut={entreprise.statut} />
+
+        {!estCloture ? (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => onChangerStatut(entreprise.id, 'converti')}
+              disabled={enCours}
+              className="rounded-sm p-1 text-muted/60 transition-colors hover:bg-emerald-500/10 hover:text-emerald-400"
+              title="Clôturer : Converti"
+            >
+              <CheckCircle2 size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={() => onChangerStatut(entreprise.id, 'perdu')}
+              disabled={enCours}
+              className="rounded-sm p-1 text-muted/60 transition-colors hover:bg-rose-500/10 hover:text-rose-400"
+              title="Clôturer : Perdu"
+            >
+              <XCircle size={14} />
+            </button>
+          </div>
+        ) : null}
       </div>
     </motion.div>
   )
@@ -77,6 +90,7 @@ function CarteKanban({ entreprise, onChangerStatut, enCours }) {
 
 export default function EntrepriseKanban({ entreprises, onChangerStatut, enCours }) {
   const [colonneSurvolee, setColonneSurvolee] = useState(null)
+  const toast = useToast()
 
   if (entreprises.length === 0) {
     return <EmptyState icone={Building2} titre="Aucune entreprise dans le pipeline" />
@@ -92,6 +106,8 @@ export default function EntrepriseKanban({ entreprises, onChangerStatut, enCours
       {KANBAN_COLONNES.map((colonne) => {
         const elements = entreprises.filter((entreprise) => colonne.statuts.includes(entreprise.statut))
         const survolee = colonneSurvolee === colonne.statut
+        const estColonneCloture = colonne.statut === 'converti' || colonne.statut === 'perdu'
+
         return (
           <div
             key={colonne.statut}
@@ -104,7 +120,13 @@ export default function EntrepriseKanban({ entreprises, onChangerStatut, enCours
               e.preventDefault()
               setColonneSurvolee(null)
               const id = e.dataTransfer.getData('text/plain')
-              if (id) onChangerStatut(id, colonne.statut)
+              if (!id) return
+
+              if (estColonneCloture) {
+                onChangerStatut(id, colonne.statut)
+              } else {
+                toast.info('Ce statut est géré automatiquement par le flux de prospection (envoi, relance, réponse).')
+              }
             }}
             className={`flex w-[260px] shrink-0 flex-col rounded-md border p-2 transition-colors ${
               survolee ? 'border-accent/50 bg-accent/[0.04]' : 'border-border bg-surface/50'
@@ -127,7 +149,7 @@ export default function EntrepriseKanban({ entreprises, onChangerStatut, enCours
               ))}
               {elements.length === 0 && (
                 <p className="rounded-sm border border-dashed border-border/70 px-2 py-4 text-center text-[10px] text-muted/50">
-                  Déposer ici
+                  {estColonneCloture ? 'Glisser ici pour clôturer' : 'Flux automatique'}
                 </p>
               )}
             </div>

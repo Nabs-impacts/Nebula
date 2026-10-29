@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, Loader2, Pencil, RefreshCw, Sparkles, Trash2 } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, Loader2, Pencil, RefreshCw, RotateCcw, Sparkles, Trash2 } from 'lucide-react'
 import { useEntreprise, useModifierEntreprise, useSupprimerEntreprise } from '../hooks/useEntreprises'
 import {
   useCorrigerMessage,
@@ -15,8 +15,10 @@ import StatutBadge from '../components/entreprises/StatutBadge'
 import MessagePreview from '../components/messages/MessagePreview'
 import MessageEditor from '../components/messages/MessageEditor'
 import HistoriqueMessages from '../components/messages/HistoriqueMessages'
+import ReponsesRecuesSection from '../components/entreprises/ReponsesRecuesSection'
 import NotesTimeline from '../components/entreprises/NotesTimeline'
 import ConfirmModal from '../components/common/ConfirmModal'
+import CloturerModal from '../components/entreprises/CloturerModal'
 import { SkeletonBlock } from '../components/common/Skeleton'
 import { useToast } from '../components/common/Toast'
 import { validerFormulaireGeneration } from '../utils/validators'
@@ -119,10 +121,12 @@ export default function EntrepriseDetailPage() {
 
   const [modeEdition, setModeEdition] = useState(false)
   const [modaleSuppression, setModaleSuppression] = useState(false)
+  const [modaleCloture, setModaleCloture] = useState(false)
   const [messageEnEdition, setMessageEnEdition] = useState(null)
 
   const dernierMessage = historique[0] ?? null
   const auMoinsUnEnvoye = historique.some((m) => m.statut_envoi === 'envoye')
+  const estCloture = entreprise?.statut === 'converti' || entreprise?.statut === 'perdu'
 
   async function gererGeneration(valeurs) {
     try {
@@ -164,12 +168,23 @@ export default function EntrepriseDetailPage() {
     }
   }
 
-  async function gererChangementStatut(statut) {
+  async function gererCloture(statut) {
     try {
       await modifierEntreprise.mutateAsync({ statut })
-      toast.succes('Statut mis à jour.')
+      setModaleCloture(false)
+      toast.succes(statut === 'converti' ? 'Entreprise marquée comme convertie !' : 'Entreprise marquée comme perdue.')
     } catch {
-      toast.erreur('Impossible de changer le statut.')
+      toast.erreur('Impossible de clôturer la conversation.')
+    }
+  }
+
+  async function gererReouverture() {
+    try {
+      const nouveauStatut = auMoinsUnEnvoye ? 'en_attente_reponse' : 'nouveau'
+      await modifierEntreprise.mutateAsync({ statut: nouveauStatut })
+      toast.succes('Conversation rouverte.')
+    } catch {
+      toast.erreur('Impossible de rouvrir la conversation.')
     }
   }
 
@@ -212,7 +227,28 @@ export default function EntrepriseDetailPage() {
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {!estCloture ? (
+            <button
+              type="button"
+              className="btn-secondary text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+              onClick={() => setModaleCloture(true)}
+              title="Clôturer la conversation quand l'échange est terminé"
+            >
+              <CheckCircle2 size={14} /> Clôturer
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="btn-secondary text-muted hover:text-ink"
+              onClick={gererReouverture}
+              disabled={modifierEntreprise.isPending}
+              title="Rouvrir la conversation pour poursuivre la prospection"
+            >
+              <RotateCcw size={14} /> Rouvrir
+            </button>
+          )}
+
           <button type="button" className="btn-secondary" onClick={() => setModeEdition((v) => !v)}>
             <Pencil size={14} /> {modeEdition ? 'Fermer' : 'Modifier'}
           </button>
@@ -276,18 +312,10 @@ export default function EntrepriseDetailPage() {
             </div>
             <div>
               <p className="label">Statut</p>
-              <select
-                className="input mt-1 py-1.5 text-sm"
-                value={entreprise.statut}
-                onChange={(e) => gererChangementStatut(e.target.value)}
-                disabled={modifierEntreprise.isPending}
-              >
-                {Object.entries(STATUT_LABELS).map(([valeur, label]) => (
-                  <option key={valeur} value={valeur}>
-                    {label}
-                  </option>
-                ))}
-              </select>
+              <div className="mt-1 flex items-center gap-2">
+                <StatutBadge statut={entreprise.statut} />
+                <span className="font-mono text-[10px] text-muted/60">(géré automatiquement)</span>
+              </div>
             </div>
             <div>
               <p className="label">Priorité</p>
@@ -342,6 +370,8 @@ export default function EntrepriseDetailPage() {
       </AnimatePresence>
 
       <NotesTimeline entrepriseId={id} />
+
+      <ReponsesRecuesSection entrepriseId={id} />
 
       <FormulaireGeneration
         onGenerer={gererGeneration}
@@ -409,6 +439,14 @@ export default function EntrepriseDetailPage() {
         enCours={supprimerEntreprise.isPending}
         onConfirmer={gererSuppression}
         onAnnuler={() => setModaleSuppression(false)}
+      />
+
+      <CloturerModal
+        ouvert={modaleCloture}
+        nomEntreprise={entreprise.nom}
+        enCours={modifierEntreprise.isPending}
+        onCloturer={gererCloture}
+        onFermer={() => setModaleCloture(false)}
       />
     </div>
   )

@@ -88,6 +88,12 @@ class Entreprise(Base):
 
     messages = relationship("Message", back_populates="entreprise", cascade="all, delete-orphan")
     notes = relationship("Note", back_populates="entreprise", cascade="all, delete-orphan")
+    reponses = relationship(
+        "ReponseRecue",
+        back_populates="entreprise",
+        cascade="all, delete-orphan",
+        order_by="desc(ReponseRecue.recu_le)",
+    )
 
     def __repr__(self) -> str:
         return f"<Entreprise {self.nom} ({self.statut})>"

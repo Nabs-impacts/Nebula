@@ -23,12 +23,14 @@ def envoyer_message(db: Session, message: Message, entreprise: Entreprise) -> Me
             if not entreprise.email:
                 raise ValueError("Cette entreprise n'a pas d'adresse email enregistrée")
             html_email, texte_email = construire_email(sujet=sujet, corps=contenu_brut)
-            envoyer_email(
+            reponse_envoi = envoyer_email(
                 destinataire_email=entreprise.email,
                 sujet=sujet,
                 contenu_html=html_email,
                 contenu_texte=texte_email,
             )
+            if isinstance(reponse_envoi, dict) and "messageId" in reponse_envoi:
+                message.identifiant_externe = str(reponse_envoi["messageId"])
         elif message.canal == CanalMessage.WHATSAPP:
             if not entreprise.whatsapp:
                 raise ValueError("Cette entreprise n'a pas de numéro WhatsApp enregistré")

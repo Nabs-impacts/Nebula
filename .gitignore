@@ -20,6 +20,12 @@ Backend/celerybeat-schedule
 Backend/celerybeat.pid
 
 ### =====================================================
+### Frontend (React + Vite)
+### =====================================================
+Frontend/dist/
+Frontend/.vite/
+
+### =====================================================
 ### Frontend-client (React + TypeScript)
 ### =====================================================
 Frontend/Frontend-client/node_modules/
@@ -76,4 +82,6 @@ Thumbs.db
 *.tar.gz
 .env
 .env.local
+node_modules/
+node_modules/
 node_modules/

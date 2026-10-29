@@ -25,6 +25,16 @@ class Settings(BaseSettings):
     brevo_sender_name: str = "Nebula"
     brevo_reply_to: str | None = None  # boîte qui reçoit les réponses (défaut : l'expéditeur)
 
+    # Réception IMAP (boîte Gmail de réception des réponses)
+    imap_enabled: bool = False
+    imap_host: str = "imap.gmail.com"
+    imap_port: int = 993
+    imap_user: str = ""
+    imap_password: str = ""
+    imap_folder: str = "INBOX"
+    imap_poll_minutes: int = 5
+    imap_lookback_days: int = 7
+
     # WhatsApp (Meta Cloud API)
     whatsapp_phone_number_id: str
     whatsapp_business_account_id: str

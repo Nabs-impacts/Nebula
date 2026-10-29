@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Building2, LayoutDashboard, Settings, X } from 'lucide-react'
+import { useResumeReponses } from '../../hooks/useReponses'
 import { DURATION } from '../../lib/motion'
 
 const LIENS = [
@@ -10,6 +11,9 @@ const LIENS = [
 ]
 
 function ContenuSidebar({ onFermer }) {
+  const { data: resume } = useResumeReponses()
+  const nonLues = resume?.non_lues || 0
+
   return (
     <>
       <div className="flex h-16 items-center justify-between border-b border-border px-4">
@@ -62,7 +66,12 @@ function ContenuSidebar({ onFermer }) {
                       }`}
                     />
                     <Icone size={16} strokeWidth={1.75} />
-                    <span className="tracking-tight">{label}</span>
+                    <span className="flex-1 tracking-tight">{label}</span>
+                    {to === '/dashboard' && nonLues > 0 && (
+                      <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 font-mono text-[9px] font-bold text-bg">
+                        {nonLues}
+                      </span>
+                    )}
                   </>
                 )}
               </NavLink>

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useAuth } from './hooks/useAuth'
@@ -15,8 +16,8 @@ function RouteProtegee({ children }) {
 
   if (chargement) {
     return (
-      <div className="flex h-screen items-center justify-center bg-bg text-muted font-mono text-sm">
-        chargement…
+      <div className="flex h-screen items-center justify-center bg-bg font-mono text-xs tracking-widest text-muted">
+        CHARGEMENT…
       </div>
     )
   }
@@ -30,22 +31,25 @@ function RouteProtegee({ children }) {
 
 function LayoutApplication({ children }) {
   const location = useLocation()
+  const [menuOuvert, setMenuOuvert] = useState(false)
 
   return (
-    <div className="flex h-screen bg-bg text-ink">
-      <Sidebar />
-      <div className="flex flex-1 flex-col min-w-0">
-        <Navbar />
-        <main className="flex-1 overflow-y-auto p-6">
+    <div className="min-h-screen bg-bg text-ink">
+      <Sidebar ouvert={menuOuvert} onFermer={() => setMenuOuvert(false)} />
+
+      <div className="flex min-h-screen min-w-0 flex-col lg:pl-64">
+        <Navbar onOuvrirMenu={() => setMenuOuvert(true)} />
+        <main className="flex-1 px-5 py-7 sm:px-8 lg:px-10 lg:py-9">
           {/* Transition douce entre pages : fade + léger slide, jamais de
               scroll-jacking ni de mouvement sur width/height. */}
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
-              initial={{ opacity: 0, y: 6 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: DURATION.normal, ease: 'easeOut' }}
+              className="mx-auto w-full max-w-7xl"
             >
               {children}
             </motion.div>

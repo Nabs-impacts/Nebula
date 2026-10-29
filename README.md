@@ -41,8 +41,9 @@ cp .env.example .env
 npm run dev
 ```
 
-L'envoi des messages (email/WhatsApp) tourne en tâche de fond dans le même
-processus `uvicorn` — aucune commande supplémentaire à lancer pour démarrer.
+L'envoi des messages (email/WhatsApp) est synchrone : l'application attend la
+réponse de Brevo ou de WhatsApp pour afficher un succès ou une erreur détaillée.
+Aucune commande supplémentaire à lancer pour démarrer.
 
 *(Une file d'attente RQ/Redis est déjà codée dans `app/workers/` pour le jour
 où le volume d'envois justifiera plusieurs workers avec retries robustes.

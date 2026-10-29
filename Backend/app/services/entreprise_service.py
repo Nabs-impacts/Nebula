@@ -1,5 +1,6 @@
 import uuid
 
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.models.entreprise import Entreprise
@@ -20,6 +21,10 @@ def lister_entreprises(
     limit: int = 50,
     statut: str | None = None,
     type_entreprise: str | None = None,
+    q: str | None = None,
+    ville: str | None = None,
+    priorite: str | None = None,
+    tag: str | None = None,
 ) -> list[Entreprise]:
     query = db.query(Entreprise)
 
@@ -27,6 +32,23 @@ def lister_entreprises(
         query = query.filter(Entreprise.statut == statut)
     if type_entreprise:
         query = query.filter(Entreprise.type_entreprise == type_entreprise)
+    if ville:
+        query = query.filter(Entreprise.ville.ilike(f"%{ville}%"))
+    if priorite:
+        query = query.filter(Entreprise.priorite == priorite)
+    if tag:
+        query = query.filter(Entreprise.tags.any(tag))
+    if q:
+        motif = f"%{q.strip()}%"
+        query = query.filter(
+            or_(
+                Entreprise.nom.ilike(motif),
+                Entreprise.email.ilike(motif),
+                Entreprise.contact_nom.ilike(motif),
+                Entreprise.ville.ilike(motif),
+                Entreprise.autres_observations.ilike(motif),
+            )
+        )
 
     return query.order_by(Entreprise.date_creation.desc()).offset(skip).limit(limit).all()
 

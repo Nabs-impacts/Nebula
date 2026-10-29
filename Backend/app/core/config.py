@@ -22,7 +22,8 @@ class Settings(BaseSettings):
     # Brevo (email)
     brevo_api_key: str
     brevo_sender_email: str
-    brevo_sender_name: str = "Tenora"
+    brevo_sender_name: str = "Nebula"
+    brevo_reply_to: str | None = None  # boîte qui reçoit les réponses (défaut : l'expéditeur)
 
     # WhatsApp (Meta Cloud API)
     whatsapp_phone_number_id: str
@@ -30,7 +31,23 @@ class Settings(BaseSettings):
     whatsapp_access_token: str
     whatsapp_api_version: str = "v20.0"
 
+    # Identité de l'agence (utilisée dans les prompts et les signatures)
+    agence_nom: str = "Nebula"
+    agence_signature: str = "L'équipe Nebula"
+    agence_telephone_1: str = "87773982"
+    agence_telephone_2: str = "80181172"
+    agence_site_web: str = "https://tenora-digital.store"
+    agence_preuve_clients: str = "plus d'une cinquantaine de clients satisfaits"
+    agence_argument_prix: str = "des tarifs adaptés aux entreprises locales"
+    agence_adresse: str = "Niamey, Niger"
+    agence_logo_url: str = ""
+    agence_logo_blanc_url: str = ""
+    agence_icone_url: str = ""
+    agence_cta_label: str = "Voir la maquette"
+    agence_cta_url: str = "https://tenora-digital.store"
+
     # IA (génération des messages)
+    ia_prioritaire: str = "groq"  # "groq" ou "mistral"
     groq_api_key: str
     groq_model: str = "llama-3.3-70b-versatile"
     mistral_api_key: str | None = None

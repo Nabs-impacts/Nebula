@@ -6,7 +6,7 @@ export default function StatutBadge({ statut }) {
 
   return (
     <span
-      className="mono-chip inline-flex items-center gap-1.5 rounded-sm border px-2 py-1"
+      className="mono-chip inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-sm border px-2 py-1 uppercase tracking-[0.08em]"
       style={{
         color: couleur.text,
         borderColor: couleur.ring,

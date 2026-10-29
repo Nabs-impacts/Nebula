@@ -10,15 +10,47 @@ export const STATUT_LABELS = {
 }
 
 export const STATUT_COLORS = {
-  nouveau: { text: '#9aacaa', ring: 'rgba(154,172,170,0.35)', bg: 'rgba(154,172,170,0.1)' },
-  message_genere: { text: '#a78bfa', ring: 'rgba(167,139,250,0.35)', bg: 'rgba(167,139,250,0.1)' },
-  envoye: { text: '#22d3ee', ring: 'rgba(34,211,238,0.35)', bg: 'rgba(34,211,238,0.1)' },
-  en_attente_reponse: { text: '#ffb454', ring: 'rgba(255,180,84,0.35)', bg: 'rgba(255,180,84,0.1)' },
-  repondu: { text: '#60a5fa', ring: 'rgba(96,165,250,0.35)', bg: 'rgba(96,165,250,0.1)' },
-  relance_envoyee: { text: '#fb923c', ring: 'rgba(251,146,60,0.35)', bg: 'rgba(251,146,60,0.1)' },
-  converti: { text: '#39ff88', ring: 'rgba(57,255,136,0.4)', bg: 'rgba(57,255,136,0.12)' },
-  perdu: { text: '#ff5470', ring: 'rgba(255,84,112,0.35)', bg: 'rgba(255,84,112,0.1)' },
+  nouveau: { text: '#a89b8c', ring: 'rgba(168,155,140,0.32)', bg: 'rgba(168,155,140,0.09)' },
+  message_genere: { text: '#c9a87c', ring: 'rgba(201,168,124,0.34)', bg: 'rgba(201,168,124,0.1)' },
+  envoye: { text: '#9db4c0', ring: 'rgba(157,180,192,0.34)', bg: 'rgba(157,180,192,0.1)' },
+  en_attente_reponse: { text: '#e0a458', ring: 'rgba(224,164,88,0.36)', bg: 'rgba(224,164,88,0.1)' },
+  repondu: { text: '#8fb0c4', ring: 'rgba(143,176,196,0.34)', bg: 'rgba(143,176,196,0.1)' },
+  relance_envoyee: { text: '#e2725b', ring: 'rgba(226,114,91,0.36)', bg: 'rgba(226,114,91,0.1)' },
+  converti: { text: '#8fbf9f', ring: 'rgba(143,191,159,0.4)', bg: 'rgba(143,191,159,0.11)' },
+  perdu: { text: '#d9695b', ring: 'rgba(217,105,91,0.34)', bg: 'rgba(217,105,91,0.09)' },
 }
+
+export const PRIORITE_LABELS = {
+  basse: 'Basse',
+  normale: 'Normale',
+  haute: 'Haute',
+}
+
+export const PRIORITE_COLORS = {
+  basse: { text: '#9db4c0', ring: 'rgba(157,180,192,0.34)', bg: 'rgba(157,180,192,0.1)' },
+  normale: { text: '#e0a458', ring: 'rgba(224,164,88,0.36)', bg: 'rgba(224,164,88,0.1)' },
+  haute: { text: '#e2725b', ring: 'rgba(226,114,91,0.36)', bg: 'rgba(226,114,91,0.1)' },
+}
+
+export const PRESENCE_WEB_LABELS = {
+  aucun_site: 'Aucun site web',
+  site_existant: 'Site existant',
+  inconnu: 'Non vérifié',
+}
+
+export const KANBAN_COLONNES = [
+  { statut: 'nouveau', label: 'Nouveau', statuts: ['nouveau'] },
+  { statut: 'message_genere', label: 'À valider', statuts: ['message_genere'] },
+  {
+    statut: 'en_attente_reponse',
+    label: 'Contacté',
+    statuts: ['envoye', 'en_attente_reponse'],
+  },
+  { statut: 'relance_envoyee', label: 'Relancé', statuts: ['relance_envoyee'] },
+  { statut: 'repondu', label: 'Répondu', statuts: ['repondu'] },
+  { statut: 'converti', label: 'Converti', statuts: ['converti'] },
+  { statut: 'perdu', label: 'Perdu', statuts: ['perdu'] },
+]
 
 export const TYPE_ENTREPRISE_LABELS = {
   commerce: 'Commerce',

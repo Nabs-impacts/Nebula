@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.logging import configurer_logging
-from app.api.routes import auth, entreprises, messages, utilisateurs, dashboard
+from app.api.routes import auth, dashboard, entreprises, messages, notes, utilisateurs
 
 configurer_logging()
 
@@ -26,6 +26,7 @@ app.include_router(entreprises.router)
 app.include_router(messages.router)
 app.include_router(utilisateurs.router)
 app.include_router(dashboard.router)
+app.include_router(notes.router)
 
 
 @app.get("/health", tags=["health"])

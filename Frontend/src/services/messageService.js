@@ -34,3 +34,8 @@ export async function genererRelance(entrepriseId) {
   const { data } = await api.post(`/api/messages/relance/${entrepriseId}`)
   return data
 }
+
+export async function getApercuEmail(id) {
+  const { data } = await api.get(`/api/messages/${id}/apercu-email`)
+  return data
+}

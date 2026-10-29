@@ -5,6 +5,7 @@ from app.db.base import Base, engine
 from app.models.entreprise import Entreprise  # noqa: F401
 from app.models.utilisateur import Utilisateur  # noqa: F401
 from app.models.message import Message  # noqa: F401
+from app.models.note import Note  # noqa: F401
 
 
 def init_db() -> None:

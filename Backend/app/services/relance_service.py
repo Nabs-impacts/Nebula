@@ -12,21 +12,43 @@ from app.services import message_service
 DELAI_RELANCE_JOURS = 5
 
 
+def _dernier_message_envoye(db: Session, entreprise_id) -> Message | None:
+    return (
+        db.query(Message)
+        .filter(Message.entreprise_id == entreprise_id, Message.statut_envoi == StatutEnvoi.ENVOYE)
+        .order_by(Message.date_envoi.desc())
+        .first()
+    )
+
+
 def trouver_entreprises_a_relancer(db: Session) -> list[Entreprise]:
-    """Retourne les entreprises dont le dernier message envoyé date de plus de
-    DELAI_RELANCE_JOURS jours et qui n'ont pas encore répondu ni été relancées trop récemment.
+    """Retourne les entreprises contactées dont le dernier envoi date de plus de
+    DELAI_RELANCE_JOURS jours, sans réponse et sans relance déjà partie.
     """
     seuil = datetime.now(timezone.utc) - timedelta(days=DELAI_RELANCE_JOURS)
-
-    return (
+    candidates = (
         db.query(Entreprise)
-        .filter(Entreprise.statut == StatutProspection.ENVOYE)
-        .join(Message, Message.entreprise_id == Entreprise.id)
-        .filter(Message.statut_envoi == StatutEnvoi.ENVOYE)
-        .filter(Message.date_envoi <= seuil)
-        .distinct()
+        .filter(
+            Entreprise.statut.in_(
+                [StatutProspection.ENVOYE, StatutProspection.EN_ATTENTE_REPONSE]
+            )
+        )
         .all()
     )
+
+    resultat: list[Entreprise] = []
+    for entreprise in candidates:
+        dernier = _dernier_message_envoye(db, entreprise.id)
+        if dernier is None or dernier.date_envoi is None:
+            continue
+        if dernier.est_relance:
+            continue
+        date_envoi = dernier.date_envoi
+        if date_envoi.tzinfo is None:
+            date_envoi = date_envoi.replace(tzinfo=timezone.utc)
+        if date_envoi <= seuil:
+            resultat.append(entreprise)
+    return resultat
 
 
 def generer_relance_pour_entreprise(db: Session, entreprise: Entreprise) -> Message | None:
@@ -34,21 +56,29 @@ def generer_relance_pour_entreprise(db: Session, entreprise: Entreprise) -> Mess
 
     Se base sur le dernier message envoyé pour construire la relance.
     """
-    dernier_message = (
-        db.query(Message)
-        .filter(Message.entreprise_id == entreprise.id, Message.statut_envoi == StatutEnvoi.ENVOYE)
-        .order_by(Message.date_envoi.desc())
-        .first()
-    )
+    dernier_message = _dernier_message_envoye(db, entreprise.id)
 
     if dernier_message is None:
         logger.warning(f"Aucun message précédent trouvé pour la relance de {entreprise.nom}")
         return None
 
-    contenu_relance = generer_relance(
+    jours = None
+    if dernier_message.date_envoi:
+        date_envoi = dernier_message.date_envoi
+        if date_envoi.tzinfo is None:
+            date_envoi = date_envoi.replace(tzinfo=timezone.utc)
+        jours = max(0, (datetime.now(timezone.utc) - date_envoi).days)
+
+    resultat = generer_relance(
         nom_entreprise=entreprise.nom,
         contenu_precedent=dernier_message.contenu_final or dernier_message.contenu_genere,
         canal=dernier_message.canal.value,
+        sujet_precedent=dernier_message.sujet,
+        jours_depuis_envoi=jours,
+        contact_nom=entreprise.contact_nom,
+        ville=entreprise.ville,
+        type_entreprise=entreprise.type_entreprise.value,
+        autres_observations=entreprise.autres_observations,
     )
 
     message_relance = message_service.creer_message(
@@ -56,12 +86,11 @@ def generer_relance_pour_entreprise(db: Session, entreprise: Entreprise) -> Mess
         MessageCreate(
             entreprise_id=entreprise.id,
             canal=dernier_message.canal,
-            contenu_genere=contenu_relance,
+            sujet=resultat.objet if dernier_message.canal.value == "email" else None,
+            angle=resultat.angle,
+            contenu_genere=resultat.corps,
             est_relance=True,
         ),
     )
-
-    entreprise.statut = StatutProspection.RELANCE_ENVOYEE
-    db.commit()
 
     return message_relance

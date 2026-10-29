@@ -20,7 +20,7 @@ export default function ConfirmModal({
           initial="hidden"
           animate="show"
           exit="exit"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-md p-4"
           onClick={onAnnuler}
           role="presentation"
         >
@@ -29,13 +29,13 @@ export default function ConfirmModal({
             initial="hidden"
             animate="show"
             exit="exit"
-            className="card w-full max-w-sm p-6"
+            className="card w-full max-w-sm p-6 sm:p-7"
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="confirm-modal-titre"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 id="confirm-modal-titre" className="text-base font-medium text-ink">
+            <h2 id="confirm-modal-titre" className="section-title">
               {titre}
             </h2>
             {message && <p className="mt-2 text-sm text-muted">{message}</p>}

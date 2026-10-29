@@ -1,14 +1,26 @@
 import uuid
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.db.base import get_db
-from app.models.message import StatutEnvoi
-from app.schemas.message import MessageCreate, MessageGenerationRequest, MessageOut, MessageUpdate
-from app.services import entreprise_service, generation_service, message_service, relance_service
-from app.workers.tasks_envoi import tache_envoyer_message
+from app.integrations.email.brevo_client import ErreurEnvoiEmail
+from app.integrations.email.template_email import construire_email
+from app.models.message import CanalMessage, StatutEnvoi
+from app.schemas.message import (
+    MessageCreate,
+    MessageGenerationRequest,
+    MessageOut,
+    MessageUpdate,
+)
+from app.services import (
+    entreprise_service,
+    envoi_service,
+    generation_service,
+    message_service,
+    relance_service,
+)
 
 router = APIRouter(prefix="/api/messages", tags=["messages"])
 
@@ -45,6 +57,33 @@ def obtenir_message(
     if message is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message introuvable")
     return message
+
+
+@router.get("/{message_id}/apercu-email")
+def apercu_email(
+    message_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    _utilisateur=Depends(get_current_user),
+):
+    """Renvoie le HTML rendu de l'email (même template que l'envoi Brevo)."""
+    message = message_service.obtenir_message(db, message_id)
+    if message is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message introuvable")
+    if message.canal != CanalMessage.EMAIL:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="L'aperçu email n'est disponible que pour le canal email",
+        )
+
+    entreprise = entreprise_service.obtenir_entreprise(db, message.entreprise_id)
+    if entreprise is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Entreprise introuvable")
+
+    sujet = message.sujet or f"Une idée pour {entreprise.nom}"
+    html_email, texte_email = construire_email(
+        sujet=sujet, corps=message.contenu_final or message.contenu_genere
+    )
+    return {"sujet": sujet, "html": html_email, "texte": texte_email}
 
 
 @router.patch("/{message_id}", response_model=MessageOut)
@@ -110,29 +149,24 @@ def generer_relance_manuelle(
 
 
 # ------------------------------------------------------------------
-# Envoi (tâche de fond FastAPI — aucun worker séparé à lancer)
+# Envoi synchrone : l'erreur du fournisseur remonte à l'interface.
 # ------------------------------------------------------------------
 #
-# À faible volume, l'envoi tourne en BackgroundTasks : dans le même
-# processus qu'uvicorn, sans infra supplémentaire. Si le volume augmente
-# un jour et qu'il faut des retries robustes / plusieurs workers, la
-# tâche `tache_envoyer_message` (app/workers/tasks_envoi.py) et le worker
-# RQ (app/workers/worker.py) sont déjà prêts : il suffira de remplacer
-# `background_tasks.add_task(...)` ci-dessous par `queue_envois.enqueue(...)`.
+# À faible volume, l'envoi est fait directement dans la requête pour que
+# l'utilisateur ait un retour fiable (succès ou échec) et un toast d'erreur.
+# Si le volume augmente, `tache_envoyer_message` (app/workers/tasks_envoi.py)
+# et le worker RQ restent disponibles pour passer en asynchrone avec polling.
 
-@router.post("/{message_id}/envoyer", status_code=status.HTTP_202_ACCEPTED)
+@router.post("/{message_id}/envoyer", response_model=MessageOut)
 def envoyer_message(
     message_id: uuid.UUID,
-    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     _utilisateur=Depends(get_current_user),
 ):
-    """Déclenche l'envoi du message (email ou WhatsApp selon son canal) en
-    tâche de fond. Aucun processus supplémentaire à lancer : uvicorn suffit.
+    """Envoie le message et retourne son état final (ENVOYE ou ECHEC).
 
-    Retourne 202 immédiatement ; l'envoi effectif se fait juste après la
-    réponse HTTP. Consulter GET /api/messages/{id} pour connaître le
-    statut_envoi final (ENVOYE ou ECHEC).
+    L'erreur du fournisseur (Brevo/WhatsApp) est renvoyée en 502 avec un
+    message lisible, afin que le frontend puisse afficher une notification.
     """
     message = message_service.obtenir_message(db, message_id)
     if message is None:
@@ -145,12 +179,28 @@ def envoyer_message(
     if entreprise is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Entreprise introuvable")
 
-    if not entreprise.email and not entreprise.whatsapp:
+    if message.canal == CanalMessage.EMAIL and not entreprise.email:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Cette entreprise n'a ni email ni numéro WhatsApp enregistré",
+            detail="Cette entreprise n'a pas d'adresse email enregistrée",
+        )
+    if message.canal == CanalMessage.WHATSAPP and not entreprise.whatsapp:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cette entreprise n'a pas de numéro WhatsApp enregistré",
         )
 
-    background_tasks.add_task(tache_envoyer_message, str(message.id))
+    try:
+        envoi_service.envoyer_message(db, message, entreprise)
+    except ErreurEnvoiEmail as erreur:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=erreur.message_utilisateur,
+        ) from erreur
+    except Exception as erreur:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Échec de l'envoi : {erreur}",
+        ) from erreur
 
-    return {"detail": "Envoi du message lancé en tâche de fond"}
+    return message

@@ -2,11 +2,15 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import String, Text, DateTime, Enum, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import DateTime, Enum, Float, String, Text, func
+from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+
+def _valeurs(enum_cls):
+    return [membre.value for membre in enum_cls]
 
 
 class TypeEntreprise(str, enum.Enum):
@@ -31,6 +35,18 @@ class StatutProspection(str, enum.Enum):
     PERDU = "perdu"
 
 
+class PrioriteProspection(str, enum.Enum):
+    BASSE = "basse"
+    NORMALE = "normale"
+    HAUTE = "haute"
+
+
+class PresenceWeb(str, enum.Enum):
+    AUCUN_SITE = "aucun_site"
+    SITE_EXISTANT = "site_existant"
+    INCONNU = "inconnu"
+
+
 class Entreprise(Base):
     __tablename__ = "entreprises"
 
@@ -40,14 +56,27 @@ class Entreprise(Base):
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     whatsapp: Mapped[str | None] = mapped_column(String(30), nullable=True)
 
+    contact_nom: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    ville: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    site_web: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    presence_web: Mapped[PresenceWeb] = mapped_column(
+        Enum(PresenceWeb, name="presence_web_enum", values_callable=_valeurs), default=PresenceWeb.INCONNU
+    )
+    note_google: Mapped[float | None] = mapped_column(Float, nullable=True)
+    autres_observations: Mapped[str | None] = mapped_column(Text, nullable=True)
+    priorite: Mapped[PrioriteProspection] = mapped_column(
+        Enum(PrioriteProspection, name="priorite_prospection_enum", values_callable=_valeurs), default=PrioriteProspection.NORMALE
+    )
+    tags: Mapped[list[str]] = mapped_column(ARRAY(String), default=list, nullable=False)
+
     type_entreprise: Mapped[TypeEntreprise] = mapped_column(
-        Enum(TypeEntreprise, name="type_entreprise_enum"), default=TypeEntreprise.AUTRE
+        Enum(TypeEntreprise, name="type_entreprise_enum", values_callable=_valeurs), default=TypeEntreprise.AUTRE
     )
     prototype_a_presenter: Mapped[str] = mapped_column(String(255), nullable=False)
     description_prototype: Mapped[str] = mapped_column(Text, nullable=False)
 
     statut: Mapped[StatutProspection] = mapped_column(
-        Enum(StatutProspection, name="statut_prospection_enum"), default=StatutProspection.NOUVEAU
+        Enum(StatutProspection, name="statut_prospection_enum", values_callable=_valeurs), default=StatutProspection.NOUVEAU
     )
 
     assigne_a_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
@@ -58,6 +87,7 @@ class Entreprise(Base):
     )
 
     messages = relationship("Message", back_populates="entreprise", cascade="all, delete-orphan")
+    notes = relationship("Note", back_populates="entreprise", cascade="all, delete-orphan")
 
     def __repr__(self) -> str:
         return f"<Entreprise {self.nom} ({self.statut})>"

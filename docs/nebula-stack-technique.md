@@ -30,8 +30,9 @@ Vous l'utilisez déjà côté Tenora et NigerCivil, donc pas de nouvelle courbe 
 Réutiliser l'instance PostgreSQL sur votre VPS Hetzner (déjà en place pour Tenora) évite un coût et une gestion supplémentaires. Une base ou un schéma dédié suffit pour Nebula.
 
 **Tables principales suggérées :**
-- `entreprises` (nom, email, whatsapp, type, description_prototype, tags, statut)
-- `messages` (entreprise_id, canal, contenu_genere, contenu_final, date_envoi, statut_envoi)
+- `entreprises` (nom, email, whatsapp, contact, ville, présence web, note Google, observations, priorité, tags, type, prototype, statut)
+- `messages` (entreprise_id, canal, sujet, angle, contenu_genere, contenu_final, date_envoi, statut_envoi)
+- `notes` (entreprise_id, auteur_id, contenu, date)
 - `utilisateurs` (toi + ton collègue, pour l'assignation)
 
 ## 4. Frontend — React (Vite ou Next.js)

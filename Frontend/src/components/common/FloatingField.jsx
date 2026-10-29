@@ -48,13 +48,13 @@ export default function FloatingField({
           placeholder={focus ? placeholder : ''}
           className={`input pr-9 pt-4 transition-colors ${textarea ? 'min-h-[96px] resize-y' : ''} ${
             statutInvalide ? 'border-danger/60 focus:border-danger/60' : ''
-          } ${statutValide ? 'border-neon/50' : ''}`}
+          } ${statutValide ? 'border-sage/50' : ''}`}
         />
         <label
           htmlFor={id}
           className={`pointer-events-none absolute left-3 font-medium transition-all duration-150 ${
             flotte
-              ? 'top-1.5 text-[10px] text-muted'
+              ? 'top-1.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted'
               : `text-sm text-muted ${textarea ? 'top-2.5' : 'top-1/2 -translate-y-1/2'}`
           }`}
         >
@@ -64,7 +64,7 @@ export default function FloatingField({
         {(statutValide || statutInvalide) && (
           <span className={`absolute right-3 ${textarea ? 'top-2.5' : 'top-1/2 -translate-y-1/2'}`}>
             {statutValide ? (
-              <Check size={15} className="text-neon" />
+              <Check size={15} className="text-sage" />
             ) : (
               <X size={15} className="text-danger" />
             )}

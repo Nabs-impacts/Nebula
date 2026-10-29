@@ -12,9 +12,9 @@ const ICONES = {
 }
 
 const STYLES = {
-  succes: { color: '#39ff88', border: 'rgba(57,255,136,0.35)' },
-  erreur: { color: '#ff5470', border: 'rgba(255,84,112,0.35)' },
-  info: { color: '#22d3ee', border: 'rgba(34,211,238,0.35)' },
+  succes: { color: '#8fbf9f', border: 'rgba(143,191,159,0.35)' },
+  erreur: { color: '#d9695b', border: 'rgba(217,105,91,0.35)' },
+  info: { color: '#9db4c0', border: 'rgba(157,180,192,0.35)' },
 }
 
 let idIncrement = 0

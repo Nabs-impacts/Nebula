@@ -39,6 +39,18 @@ export function validerFormulaireEntreprise(valeurs) {
     erreurs.prototype_a_presenter = 'Ce champ est obligatoire.'
   }
 
+  const note = valeurs.note_google
+  if (note !== '' && note !== null && note !== undefined) {
+    const valeur = Number(note)
+    if (Number.isNaN(valeur) || valeur < 0 || valeur > 5) {
+      erreurs.note_google = 'La note doit être comprise entre 0 et 5.'
+    }
+  }
+
+  if (valeurs.presence_web === 'site_existant' && !valeurs.site_web?.trim()) {
+    erreurs.site_web = 'Indiquez l’URL du site existant.'
+  }
+
   return erreurs
 }
 

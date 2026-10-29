@@ -1,10 +1,12 @@
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.logging import logger
 from app.integrations.email.brevo_client import envoyer_email
+from app.integrations.email.template_email import construire_email
 from app.integrations.whatsapp.meta_cloud_client import envoyer_message_texte
 from app.models.entreprise import Entreprise, StatutProspection
-from app.models.message import Message, CanalMessage
+from app.models.message import CanalMessage, Message
 from app.services import message_service
 
 
@@ -13,27 +15,32 @@ def envoyer_message(db: Session, message: Message, entreprise: Entreprise) -> Me
 
     Utilise contenu_final s'il a été relu/modifié manuellement, sinon contenu_genere.
     """
-    contenu_a_envoyer = message.contenu_final or message.contenu_genere
+    contenu_brut = message.contenu_final or message.contenu_genere
+    sujet = message.sujet or f"Une idée pour {entreprise.nom}"
 
     try:
         if message.canal == CanalMessage.EMAIL:
             if not entreprise.email:
                 raise ValueError("Cette entreprise n'a pas d'adresse email enregistrée")
+            html_email, texte_email = construire_email(sujet=sujet, corps=contenu_brut)
             envoyer_email(
                 destinataire_email=entreprise.email,
-                sujet=f"Proposition de collaboration — {entreprise.nom}",
-                contenu_html=_texte_vers_html(contenu_a_envoyer),
-                contenu_texte=contenu_a_envoyer,
+                sujet=sujet,
+                contenu_html=html_email,
+                contenu_texte=texte_email,
             )
         elif message.canal == CanalMessage.WHATSAPP:
             if not entreprise.whatsapp:
                 raise ValueError("Cette entreprise n'a pas de numéro WhatsApp enregistré")
-            envoyer_message_texte(entreprise.whatsapp, contenu_a_envoyer)
+            envoyer_message_texte(entreprise.whatsapp, _avec_signature(contenu_brut))
         else:
             raise ValueError(f"Canal non supporté : {message.canal}")
 
         message_service.marquer_comme_envoye(db, message)
-        _mettre_a_jour_statut_entreprise(db, entreprise, StatutProspection.ENVOYE)
+        statut = (
+            StatutProspection.RELANCE_ENVOYEE if message.est_relance else StatutProspection.EN_ATTENTE_REPONSE
+        )
+        _mettre_a_jour_statut_entreprise(db, entreprise, statut)
 
     except Exception as erreur:
         logger.error(f"Échec de l'envoi du message {message.id} : {erreur}")
@@ -48,7 +55,16 @@ def _mettre_a_jour_statut_entreprise(db: Session, entreprise: Entreprise, statut
     db.commit()
 
 
-def _texte_vers_html(texte: str) -> str:
-    """Conversion simple du texte brut en HTML (paragraphes séparés par des sauts de ligne)."""
-    paragraphes = texte.strip().split("\n\n")
-    return "".join(f"<p>{p.replace(chr(10), '<br>')}</p>" for p in paragraphes)
+def _avec_signature(texte: str) -> str:
+    """Ajoute la signature Tenora si le modèle ne l'a pas déjà fait."""
+    if "cordialement" in texte.lower() or settings.agence_nom.lower() in texte.lower():
+        return texte
+
+    signature = [
+        "Cordialement,",
+        settings.agence_signature,
+        f"{settings.agence_telephone_1} · {settings.agence_telephone_2}",
+        settings.agence_site_web,
+    ]
+    return f"{texte.rstrip()}\n\n" + "\n".join(signature)
+

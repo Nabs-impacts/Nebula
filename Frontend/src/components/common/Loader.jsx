@@ -4,7 +4,7 @@ export default function Loader({ label = 'Chargement…', taille = 'md' }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-10 text-muted">
       <span
-        className={`inline-block animate-spin rounded-full border-neon/30 border-t-neon ${dimensions[taille]}`}
+        className={`inline-block animate-spin rounded-full border-accent/25 border-t-accent ${dimensions[taille]}`}
         role="status"
         aria-label={label}
       />

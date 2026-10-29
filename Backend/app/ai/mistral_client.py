@@ -6,7 +6,12 @@ from app.core.logging import logger
 MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
 
 
-def generer_texte(prompt_systeme: str, prompt_utilisateur: str, temperature: float = 0.7) -> str:
+def generer_texte(
+    prompt_systeme: str,
+    prompt_utilisateur: str,
+    temperature: float = 0.6,
+    max_tokens: int = 900,
+) -> str:
     """Appelle l'API Mistral (La Plateforme) pour générer un texte.
 
     Utilisé en repli par app/ai/generateur_message.py quand Groq échoue.
@@ -28,7 +33,7 @@ def generer_texte(prompt_systeme: str, prompt_utilisateur: str, temperature: flo
             {"role": "user", "content": prompt_utilisateur},
         ],
         "temperature": temperature,
-        "max_tokens": 500,
+        "max_tokens": max_tokens,
     }
 
     try:

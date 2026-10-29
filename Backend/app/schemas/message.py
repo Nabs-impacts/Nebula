@@ -16,11 +16,14 @@ class MessageGenerationRequest(BaseModel):
 class MessageCreate(BaseModel):
     entreprise_id: uuid.UUID
     canal: CanalMessage
+    sujet: str | None = None
+    angle: str | None = None
     contenu_genere: str
     est_relance: bool = False
 
 
 class MessageUpdate(BaseModel):
+    sujet: str | None = None
     contenu_final: str | None = None
     statut_envoi: StatutEnvoi | None = None
 
@@ -29,6 +32,8 @@ class MessageOut(BaseModel):
     id: uuid.UUID
     entreprise_id: uuid.UUID
     canal: CanalMessage
+    sujet: str | None
+    angle: str | None
     contenu_genere: str
     contenu_final: str | None
     est_relance: bool

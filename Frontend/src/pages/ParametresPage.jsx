@@ -32,7 +32,7 @@ function FormulaireNouvelUtilisateur({ onCree }) {
 
   return (
     <form onSubmit={gererSubmit} className="card flex flex-col gap-3 p-5">
-      <h3 className="text-sm font-medium text-ink">Créer un utilisateur</h3>
+      <h3 className="section-title text-base">Créer un utilisateur</h3>
       {mutation.isError && (
         <p className="text-xs text-danger">Impossible de créer cet utilisateur.</p>
       )}
@@ -60,7 +60,7 @@ function FormulaireNouvelUtilisateur({ onCree }) {
           onChange={(e) => setValeurs((v) => ({ ...v, mot_de_passe: e.target.value }))}
           required
         />
-        <label className="flex items-center gap-2 text-sm text-muted">
+        <label className="flex items-center gap-2 text-sm text-muted accent-accent">
           <input
             type="checkbox"
             checked={valeurs.est_admin}
@@ -118,7 +118,7 @@ function GestionUtilisateurs() {
                   <td className="px-4 py-2.5 font-mono text-xs text-muted">{u.email}</td>
                   <td className="px-4 py-2.5 text-muted">{u.est_admin ? 'Admin' : 'Membre'}</td>
                   <td className="px-4 py-2.5">
-                    <span className={u.est_actif ? 'text-neon' : 'text-danger'}>
+                    <span className={u.est_actif ? 'text-sage' : 'text-danger'}>
                       {u.est_actif ? 'Actif' : 'Désactivé'}
                     </span>
                   </td>
@@ -142,14 +142,15 @@ export default function ParametresPage() {
   useEffect(() => setUtilisateurLocal(utilisateur), [utilisateur])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       <div>
-        <h1 className="text-lg font-medium text-ink">Paramètres</h1>
-        <p className="text-sm text-muted">Profil et gestion des accès.</p>
+        <p className="eyebrow mb-2">Compte</p>
+        <h1 className="page-title">Paramètres</h1>
+        <p className="mt-2 text-sm text-muted">Profil et gestion des accès.</p>
       </div>
 
       <motion.div variants={fadeSlideUp} initial="hidden" animate="show" className="card max-w-md p-5">
-        <h2 className="mb-3 text-sm font-medium text-ink">Mon profil</h2>
+        <h2 className="section-title mb-4 text-base">Mon profil</h2>
         <dl className="flex flex-col gap-2 text-sm">
           <div className="flex justify-between">
             <dt className="text-muted">Nom</dt>
@@ -172,7 +173,7 @@ export default function ParametresPage() {
 
       {utilisateurLocal?.est_admin && (
         <div>
-          <h2 className="mb-3 text-sm font-medium text-ink">Utilisateurs</h2>
+          <h2 className="section-title mb-3 text-lg">Utilisateurs</h2>
           <GestionUtilisateurs />
         </div>
       )}

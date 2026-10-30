@@ -72,8 +72,8 @@ class Entreprise(Base):
     type_entreprise: Mapped[TypeEntreprise] = mapped_column(
         Enum(TypeEntreprise, name="type_entreprise_enum", values_callable=_valeurs), default=TypeEntreprise.AUTRE
     )
-    prototype_a_presenter: Mapped[str] = mapped_column(String(255), nullable=False)
-    description_prototype: Mapped[str] = mapped_column(Text, nullable=False)
+    prototype_a_presenter: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    description_prototype: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     statut: Mapped[StatutProspection] = mapped_column(
         Enum(StatutProspection, name="statut_prospection_enum", values_callable=_valeurs), default=StatutProspection.NOUVEAU

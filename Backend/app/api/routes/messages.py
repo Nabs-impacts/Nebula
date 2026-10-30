@@ -8,6 +8,7 @@ from app.db.base import get_db
 from app.integrations.email.brevo_client import ErreurEnvoiEmail
 from app.integrations.email.template_email import construire_email
 from app.models.message import CanalMessage, StatutEnvoi
+from app.ai.angles import ANGLES_DISPONIBLES, choisir_angle
 from app.schemas.message import (
     MessageCreate,
     MessageGenerationRequest,
@@ -36,6 +37,23 @@ def creer_message(
     _utilisateur=Depends(get_current_user),
 ):
     return message_service.creer_message(db, donnees)
+
+
+@router.get("/angles-disponibles")
+def lister_angles_disponibles(_utilisateur=Depends(get_current_user)):
+    return ANGLES_DISPONIBLES
+
+
+@router.get("/entreprise/{entreprise_id}/angle-suggere")
+def obtenir_angle_suggere(
+    entreprise_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    _utilisateur=Depends(get_current_user),
+):
+    entreprise = entreprise_service.obtenir_entreprise(db, entreprise_id)
+    if entreprise is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Entreprise introuvable")
+    return choisir_angle(entreprise)
 
 
 @router.get("/entreprise/{entreprise_id}", response_model=list[MessageOut])
@@ -93,8 +111,6 @@ def mettre_a_jour_message(
     db: Session = Depends(get_db),
     _utilisateur=Depends(get_current_user),
 ):
-    """Utilisé notamment pour enregistrer contenu_final après relecture manuelle
-    du message généré par l'IA, avant envoi (validation humaine)."""
     message = message_service.obtenir_message(db, message_id)
     if message is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message introuvable")
@@ -111,19 +127,15 @@ def generer_message(
     db: Session = Depends(get_db),
     _utilisateur=Depends(get_current_user),
 ):
-    """Génère une proposition/demande d'audition personnalisée via l'IA (Groq,
-    repli Mistral) et l'enregistre en base avec statut_envoi = EN_ATTENTE.
-    Le message n'est PAS envoyé automatiquement : à relire/valider via
-    PATCH /api/messages/{id} avant d'appeler POST /api/messages/{id}/envoyer.
-    """
+    """Génère un message personnalisé via l'IA ou en mode secours sans jamais échouer."""
     try:
         return generation_service.generer_et_enregistrer_message(db, requete)
     except ValueError as erreur:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(erreur))
     except Exception as erreur:
         raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Échec de la génération IA (Groq et Mistral indisponibles) : {erreur}",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Erreur inattendue lors de la génération : {erreur}",
         )
 
 
@@ -133,8 +145,6 @@ def generer_relance_manuelle(
     db: Session = Depends(get_db),
     _utilisateur=Depends(get_current_user),
 ):
-    """Génère manuellement une relance pour une entreprise déjà contactée,
-    sans attendre la tâche planifiée automatique (tasks_relance.py)."""
     entreprise = entreprise_service.obtenir_entreprise(db, entreprise_id)
     if entreprise is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Entreprise introuvable")
@@ -149,13 +159,8 @@ def generer_relance_manuelle(
 
 
 # ------------------------------------------------------------------
-# Envoi synchrone : l'erreur du fournisseur remonte à l'interface.
+# Envois
 # ------------------------------------------------------------------
-#
-# À faible volume, l'envoi est fait directement dans la requête pour que
-# l'utilisateur ait un retour fiable (succès ou échec) et un toast d'erreur.
-# Si le volume augmente, `tache_envoyer_message` (app/workers/tasks_envoi.py)
-# et le worker RQ restent disponibles pour passer en asynchrone avec polling.
 
 @router.post("/{message_id}/marquer-envoye-manuellement", response_model=MessageOut)
 def marquer_envoye_manuellement(
@@ -163,11 +168,6 @@ def marquer_envoye_manuellement(
     db: Session = Depends(get_db),
     _utilisateur=Depends(get_current_user),
 ):
-    """Marque un message WhatsApp comme envoyé après un envoi manuel via wa.me.
-
-    Aucun appel à l'API Meta n'est effectué : l'utilisateur a ouvert WhatsApp,
-    envoyé le message lui-même, puis confirme l'envoi dans le panel.
-    """
     message = message_service.obtenir_message(db, message_id)
     if message is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message introuvable")
@@ -197,11 +197,6 @@ def envoyer_message(
     db: Session = Depends(get_db),
     _utilisateur=Depends(get_current_user),
 ):
-    """Envoie le message et retourne son état final (ENVOYE ou ECHEC).
-
-    L'erreur du fournisseur (Brevo/WhatsApp) est renvoyée en 502 avec un
-    message lisible, afin que le frontend puisse afficher une notification.
-    """
     message = message_service.obtenir_message(db, message_id)
     if message is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message introuvable")

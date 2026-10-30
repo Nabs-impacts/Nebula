@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, CheckCircle2, Loader2, Pencil, RefreshCw, RotateCcw, Sparkles, Trash2 } from 'lucide-react'
 import { useEntreprise, useModifierEntreprise, useSupprimerEntreprise } from '../hooks/useEntreprises'
 import {
+  useAnglesDisponibles,
+  useAngleSuggere,
   useCorrigerMessage,
   useEnvoyerMessage,
   useGenererMessage,
@@ -21,28 +23,48 @@ import ConfirmModal from '../components/common/ConfirmModal'
 import CloturerModal from '../components/entreprises/CloturerModal'
 import { SkeletonBlock } from '../components/common/Skeleton'
 import { useToast } from '../components/common/Toast'
-import { validerFormulaireGeneration } from '../utils/validators'
 import {
   CANAL_LABELS,
   PRESENCE_WEB_LABELS,
   PRIORITE_LABELS,
-  STATUT_LABELS,
   TYPE_ENTREPRISE_LABELS,
 } from '../utils/formatters'
 import { fadeIn, fadeSlideUp } from '../lib/motion'
 
-function FormulaireGeneration({ onGenerer, enCours, erreur }) {
-  const [valeurs, setValeurs] = useState({ canal: 'email', service_a_proposer: '', ton: '' })
-  const [erreursChamps, setErreursChamps] = useState({})
+function FormulaireGenerationSansDoublon({ entreprise, onGenerer, enCours, onModifierFiche }) {
+  const { data: suggestion } = useAngleSuggere(entreprise.id)
+  const { data: anglesListe = [] } = useAnglesDisponibles()
+
+  const canalInitial = entreprise.email ? 'email' : entreprise.whatsapp ? 'whatsapp' : 'email'
+  const [canal, setCanal] = useState(canalInitial)
+  const [angleChoisi, setAngleChoisi] = useState('')
+  const [consigne, setConsigne] = useState('')
+
+  useEffect(() => {
+    if (suggestion?.code && !angleChoisi) {
+      setAngleChoisi(suggestion.code)
+    }
+  }, [suggestion, angleChoisi])
 
   function gererSubmit(e) {
     e.preventDefault()
-    const erreursValidation = validerFormulaireGeneration(valeurs)
-    setErreursChamps(erreursValidation)
-    if (Object.keys(erreursValidation).length === 0) {
-      onGenerer(valeurs)
-    }
+    onGenerer({
+      canal,
+      angle_code: angleChoisi || suggestion?.code,
+      consigne_supplementaire: consigne.trim() || undefined,
+    })
   }
+
+  // Filtrer les données renseignées pour le récapitulatif
+  const infosAffichees = [
+    entreprise.ville && `Ville : ${entreprise.ville}`,
+    entreprise.type_entreprise && `Secteur : ${TYPE_ENTREPRISE_LABELS[entreprise.type_entreprise] ?? entreprise.type_entreprise}`,
+    entreprise.contact_nom && `Contact : ${entreprise.contact_nom}`,
+    entreprise.note_google && `Note Google : ${entreprise.note_google} ★`,
+    entreprise.presence_web && entreprise.presence_web !== 'inconnu' && `Web : ${PRESENCE_WEB_LABELS[entreprise.presence_web] ?? entreprise.presence_web}`,
+    entreprise.site_web && `Site : ${entreprise.site_web}`,
+    entreprise.autres_observations && `Obs : ${entreprise.autres_observations}`,
+  ].filter(Boolean)
 
   return (
     <form onSubmit={gererSubmit} className="card flex flex-col gap-4 p-5 sm:p-6">
@@ -51,50 +73,68 @@ function FormulaireGeneration({ onGenerer, enCours, erreur }) {
         <h2 className="section-title">Générer un message de prospection</h2>
       </div>
 
-      <AnimatePresence>
-        {erreur && (
-          <motion.p
-            variants={fadeIn}
-            initial="hidden"
-            animate="show"
-            exit="exit"
-            className="overflow-hidden text-xs text-danger"
+      {/* Résumé des informations utilisées par l'IA */}
+      <div className="rounded-md border border-border/80 bg-surface-alt/20 p-3.5 text-xs text-muted">
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <span className="font-mono text-[10px] uppercase tracking-wider text-accent font-medium">
+            Informations prises en compte par l'IA
+          </span>
+          <button
+            type="button"
+            onClick={onModifierFiche}
+            className="text-accent underline hover:text-ink transition-colors"
           >
-            {erreur}
-          </motion.p>
+            Modifier la fiche
+          </button>
+        </div>
+        {infosAffichees.length > 0 ? (
+          <p className="leading-relaxed text-ink/80">{infosAffichees.join(' · ')}</p>
+        ) : (
+          <p className="italic">Seul le nom de l'entreprise est renseigné pour le moment.</p>
         )}
-      </AnimatePresence>
+      </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <select
-          className="input"
-          value={valeurs.canal}
-          onChange={(e) => setValeurs((v) => ({ ...v, canal: e.target.value }))}
-        >
-          {Object.entries(CANAL_LABELS).map(([valeur, label]) => (
-            <option key={valeur} value={valeur}>
-              {label}
-            </option>
-          ))}
-        </select>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div>
+          <label className="label">Canal d'envoi</label>
+          <select
+            className="input"
+            value={canal}
+            onChange={(e) => setCanal(e.target.value)}
+          >
+            {Object.entries(CANAL_LABELS).map(([valeur, label]) => (
+              <option key={valeur} value={valeur}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
 
+        <div>
+          <label className="label">Angle proposé (modifiable)</label>
+          <select
+            className="input"
+            value={angleChoisi}
+            onChange={(e) => setAngleChoisi(e.target.value)}
+          >
+            {anglesListe.map((ang) => (
+              <option key={ang.code} value={ang.code}>
+                {ang.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label className="label">Consigne supplémentaire (optionnelle)</label>
         <input
-          className="input sm:col-span-2"
-          placeholder="Service à proposer (ex : site vitrine + SEO local)"
-          value={valeurs.service_a_proposer}
-          onChange={(e) => setValeurs((v) => ({ ...v, service_a_proposer: e.target.value }))}
+          className="input"
+          placeholder="Ex : Mettre l'accent sur les délais rapides de livraison ou un ton plus chaleureux"
+          value={consigne}
+          onChange={(e) => setConsigne(e.target.value)}
         />
       </div>
-      {erreursChamps.service_a_proposer && (
-        <p className="-mt-2 text-xs text-danger">{erreursChamps.service_a_proposer}</p>
-      )}
-
-      <input
-        className="input"
-        placeholder="Ton souhaité (optionnel — ex : chaleureux, direct, formel)"
-        value={valeurs.ton}
-        onChange={(e) => setValeurs((v) => ({ ...v, ton: e.target.value }))}
-      />
 
       <button type="submit" className="btn-primary self-start" disabled={enCours}>
         {enCours ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
@@ -128,12 +168,12 @@ export default function EntrepriseDetailPage() {
   const auMoinsUnEnvoye = historique.some((m) => m.statut_envoi === 'envoye')
   const estCloture = entreprise?.statut === 'converti' || entreprise?.statut === 'perdu'
 
-  async function gererGeneration(valeurs) {
+  async function gererGeneration(parametres) {
     try {
-      await genererMessage.mutateAsync({ entreprise_id: id, ...valeurs })
+      await genererMessage.mutateAsync({ entreprise_id: id, ...parametres })
       toast.succes('Message généré avec succès.')
     } catch {
-      // erreur déjà affichée dans FormulaireGeneration
+      toast.erreur('Impossible de générer le message.')
     }
   }
 
@@ -349,20 +389,12 @@ export default function EntrepriseDetailPage() {
                 </div>
               </div>
             )}
-            <div className="sm:col-span-2">
-              <p className="label">Angle d’accroche / observations</p>
-              <p className="text-sm leading-relaxed text-ink/85">
-                {entreprise.autres_observations ?? '—'}
-              </p>
-            </div>
-            <div className="sm:col-span-2">
-              <p className="label">Prototype à présenter</p>
-              <p className="text-sm text-ink/85">{entreprise.prototype_a_presenter}</p>
-            </div>
-            {entreprise.description_prototype && (
+            {entreprise.autres_observations && (
               <div className="sm:col-span-2">
-                <p className="label">Description</p>
-                <p className="text-sm leading-relaxed text-ink/85">{entreprise.description_prototype}</p>
+                <p className="label">Angle d’accroche / observations</p>
+                <p className="text-sm leading-relaxed text-ink/85">
+                  {entreprise.autres_observations}
+                </p>
               </div>
             )}
           </motion.div>
@@ -373,16 +405,11 @@ export default function EntrepriseDetailPage() {
 
       <ReponsesRecuesSection entrepriseId={id} />
 
-      <FormulaireGeneration
+      <FormulaireGenerationSansDoublon
+        entreprise={entreprise}
         onGenerer={gererGeneration}
         enCours={genererMessage.isPending}
-        erreur={
-          genererMessage.isError
-            ? genererMessage.error?.response?.status === 502
-              ? "La génération IA a échoué, réessayez dans quelques instants."
-              : "Impossible de générer le message."
-            : null
-        }
+        onModifierFiche={() => setModeEdition(true)}
       />
 
       {dernierMessage && (
@@ -423,6 +450,7 @@ export default function EntrepriseDetailPage() {
                 envoiEnCours={envoyerMessage.isPending}
                 onModifier={() => setMessageEnEdition(dernierMessage)}
                 onEnvoyer={() => gererEnvoi(dernierMessage.id)}
+                onRegenerer={() => gererGeneration({ canal: dernierMessage.canal })}
               />
             )}
           </AnimatePresence>

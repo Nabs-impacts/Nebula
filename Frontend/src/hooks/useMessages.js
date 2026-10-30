@@ -4,6 +4,8 @@ import {
   envoyerMessage,
   genererMessage,
   genererRelance,
+  getAngleSuggere,
+  getAnglesDisponibles,
   getApercuEmail,
   getHistoriqueMessages,
   getMessage,
@@ -18,8 +20,22 @@ export function useHistoriqueMessages(entrepriseId) {
   })
 }
 
-// Poll tant que l'envoi est en_attente (asynchrone côté backend), comme demandé
-// dans les specs section 7.
+export function useAngleSuggere(entrepriseId) {
+  return useQuery({
+    queryKey: ['angle-suggere', entrepriseId],
+    queryFn: () => getAngleSuggere(entrepriseId),
+    enabled: Boolean(entrepriseId),
+  })
+}
+
+export function useAnglesDisponibles() {
+  return useQuery({
+    queryKey: ['angles-disponibles'],
+    queryFn: getAnglesDisponibles,
+    staleTime: 1000 * 60 * 10,
+  })
+}
+
 export function useMessage(id, { poll = false } = {}) {
   return useQuery({
     queryKey: ['message', id],

@@ -33,7 +33,9 @@ class Message(Base):
         UUID(as_uuid=True), ForeignKey("entreprises.id", ondelete="CASCADE"), nullable=False
     )
 
-    canal: Mapped[CanalMessage] = mapped_column(Enum(CanalMessage, name="canal_message_enum", values_callable=_valeurs), nullable=False)
+    canal: Mapped[CanalMessage] = mapped_column(
+        Enum(CanalMessage, name="canal_message_enum", values_callable=_valeurs), nullable=False
+    )
 
     sujet: Mapped[str | None] = mapped_column(String(255), nullable=True)
     angle: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -41,6 +43,7 @@ class Message(Base):
     contenu_final: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     identifiant_externe: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
+    source_generation: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     est_relance: Mapped[bool] = mapped_column(default=False)
 

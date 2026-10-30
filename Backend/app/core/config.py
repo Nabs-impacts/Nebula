@@ -59,8 +59,11 @@ class Settings(BaseSettings):
 
     # IA (génération des messages)
     ia_prioritaire: str = "groq"  # "groq" ou "mistral"
+    ia_max_tokens: int = 2500
+    ia_timeout_secondes: int = 45
+    groq_reasoning_effort: str = "low"
     groq_api_key: str
-    groq_model: str = "llama-3.3-70b-versatile"
+    groq_model: str = "openai/gpt-oss-120b"
     mistral_api_key: str | None = None
     mistral_model: str = "mistral-small-latest"
 

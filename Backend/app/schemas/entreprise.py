@@ -24,8 +24,8 @@ class EntrepriseBase(BaseModel):
     priorite: PrioriteProspection = PrioriteProspection.NORMALE
     tags: list[str] = Field(default_factory=list)
     type_entreprise: TypeEntreprise = TypeEntreprise.AUTRE
-    prototype_a_presenter: str
-    description_prototype: str
+    prototype_a_presenter: str | None = None
+    description_prototype: str | None = None
 
     @field_validator("whatsapp")
     @classmethod

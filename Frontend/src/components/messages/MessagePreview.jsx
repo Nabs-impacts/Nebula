@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Check, MessageCircle, Pencil, Send } from 'lucide-react'
+import { Check, MessageCircle, Pencil, RefreshCw, Send, Sparkles } from 'lucide-react'
 import { CANAL_LABELS, STATUT_ENVOI_LABELS, formatDate } from '../../utils/formatters'
 import { fadeSlideUp } from '../../lib/motion'
 import { useApercuEmail, useMarquerEnvoyeManuellement } from '../../hooks/useMessages'
@@ -17,14 +17,35 @@ const COULEUR_STATUT_ENVOI = {
   echec: '#d9695b',
 }
 
+function nettoyerCorpsSiJson(texteBrut) {
+  if (!texteBrut || typeof texteBrut !== 'string') return ''
+  const trimmed = texteBrut.trim()
+  if (trimmed.startsWith('{') && (trimmed.includes('"corps"') || trimmed.includes('"message"'))) {
+    try {
+      const parsed = JSON.parse(trimmed)
+      return parsed.corps || parsed.message || parsed.contenu || trimmed
+    } catch {
+      const matchCorps = trimmed.match(/"corps"\s*:\s*"((?:[^"\\]|\\.)*)"/)
+      if (matchCorps && matchCorps[1]) {
+        return matchCorps[1].replace(/\\n/g, '\n').replace(/\\"/g, '"')
+      }
+    }
+  }
+  return texteBrut
+}
+
 export default function MessagePreview({
   message,
   numeroWhatsapp,
   onModifier,
   onEnvoyer,
+  onRegenerer,
   envoiEnCours,
 }) {
-  const contenu = message.contenu_final ?? message.contenu_genere
+  const texteOriginal = message.contenu_final ?? message.contenu_genere
+  const contenu = nettoyerCorpsSiJson(texteOriginal)
+  const estJsonDetecte = texteOriginal !== contenu
+
   const couleur = COULEUR_STATUT_ENVOI[message.statut_envoi] ?? '#a89b8c'
   const enAttente = message.statut_envoi === 'en_attente'
   const estEmail = message.canal === 'email'
@@ -35,6 +56,7 @@ export default function MessagePreview({
     estWhatsapp && !dejaEnvoye
       ? genererLienWaMe(numeroNormalise, ajouterSignatureWhatsapp(contenu))
       : null
+
   const [mode, setMode] = useState('texte')
   const [clicWhatsapp, setClicWhatsapp] = useState(false)
   const [demanderConfirmation, setDemanderConfirmation] = useState(false)
@@ -73,6 +95,13 @@ export default function MessagePreview({
     }
   }
 
+  const libelleSource =
+    message.source_generation === 'secours'
+      ? 'Mode secours (IA indisponible)'
+      : message.source_generation
+      ? `Généré par ${message.source_generation.toUpperCase()}`
+      : null
+
   return (
     <motion.div
       variants={fadeSlideUp}
@@ -90,6 +119,17 @@ export default function MessagePreview({
               relance
             </span>
           )}
+          {libelleSource && (
+            <span
+              className={`rounded-sm px-2 py-0.5 border ${
+                message.source_generation === 'secours'
+                  ? 'border-amber-500/40 text-amber-400 bg-amber-500/10'
+                  : 'border-border text-muted'
+              }`}
+            >
+              {libelleSource}
+            </span>
+          )}
           <span className="inline-flex items-center gap-1.5" style={{ color: couleur }}>
             <span
               className={`h-1.5 w-1.5 rounded-full ${enAttente ? 'badge-pulse-dot' : ''}`}
@@ -104,6 +144,21 @@ export default function MessagePreview({
       </div>
 
       <div className="p-5 sm:p-6">
+        {estJsonDetecte && (
+          <div className="mb-4 flex items-center justify-between rounded-sm border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-300">
+            <span>Du code JSON brut a été détecté et nettoyé pour cet affichage.</span>
+            {onRegenerer && (
+              <button
+                type="button"
+                onClick={onRegenerer}
+                className="btn-secondary ml-3 text-xs py-1 px-2"
+              >
+                <RefreshCw size={12} /> Régénérer proprement
+              </button>
+            )}
+          </div>
+        )}
+
         {estEmail && (
           <div className="mb-4 inline-flex rounded-sm border border-border p-0.5">
             {[
@@ -204,6 +259,17 @@ export default function MessagePreview({
           )}
 
           <div className="flex flex-wrap justify-end gap-2">
+            {onRegenerer && !dejaEnvoye && (
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={onRegenerer}
+                title="Générer une nouvelle version du message"
+              >
+                <Sparkles size={14} /> Régénérer
+              </button>
+            )}
+
             <button type="button" className="btn-secondary" onClick={onModifier}>
               <Pencil size={14} /> Modifier
             </button>

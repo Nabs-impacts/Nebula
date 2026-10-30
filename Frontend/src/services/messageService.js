@@ -30,6 +30,11 @@ export async function envoyerMessage(id) {
   return data
 }
 
+export async function marquerEnvoyeManuellement(id) {
+  const { data } = await api.post(`/api/messages/${id}/marquer-envoye-manuellement`)
+  return data
+}
+
 export async function genererRelance(entrepriseId) {
   const { data } = await api.post(`/api/messages/relance/${entrepriseId}`)
   return data

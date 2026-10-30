@@ -7,6 +7,7 @@ import {
   getApercuEmail,
   getHistoriqueMessages,
   getMessage,
+  marquerEnvoyeManuellement,
 } from '../services/messageService'
 
 export function useHistoriqueMessages(entrepriseId) {
@@ -63,6 +64,21 @@ export function useEnvoyerMessage(entrepriseId) {
       queryClient.invalidateQueries({ queryKey: ['messages', entrepriseId] })
       queryClient.invalidateQueries({ queryKey: ['message', messageId] })
       queryClient.invalidateQueries({ queryKey: ['entreprise', entrepriseId] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-actions'] })
+    },
+  })
+}
+
+export function useMarquerEnvoyeManuellement(entrepriseId) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: marquerEnvoyeManuellement,
+    onSuccess: (data) => {
+      queryClient.setQueryData(['message', data.id], data)
+      queryClient.invalidateQueries({ queryKey: ['messages', entrepriseId] })
+      queryClient.invalidateQueries({ queryKey: ['entreprise', entrepriseId] })
+      queryClient.invalidateQueries({ queryKey: ['entreprises'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard-actions'] })
     },

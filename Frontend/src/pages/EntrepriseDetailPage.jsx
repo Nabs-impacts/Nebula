@@ -419,6 +419,7 @@ export default function EntrepriseDetailPage() {
               <MessagePreview
                 key="apercu"
                 message={dernierMessage}
+                numeroWhatsapp={entreprise.whatsapp}
                 envoiEnCours={envoyerMessage.isPending}
                 onModifier={() => setMessageEnEdition(dernierMessage)}
                 onEnvoyer={() => gererEnvoi(dernierMessage.id)}

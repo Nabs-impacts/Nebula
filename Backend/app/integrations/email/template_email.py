@@ -8,6 +8,7 @@ import html
 import re
 
 from app.core.config import settings
+from app.integrations.whatsapp.wa_link_fallback import normaliser_numero_whatsapp
 
 FOND = "#F7F8FC"
 TEXTE = "#12162B"
@@ -87,6 +88,25 @@ def _telephone_lien(numero: str) -> str:
     return re.sub(r"[^\d+]", "", numero)
 
 
+def _lien_whatsapp_html() -> str:
+    """Ligne discrète vers WhatsApp, uniquement si AGENCE_WHATSAPP est renseigné."""
+    numero = normaliser_numero_whatsapp(settings.agence_whatsapp)
+    if numero is None:
+        return ""
+    return (
+        '<br><a href="https://wa.me/'
+        f'{numero}" style="color:{PRIMAIRE};text-decoration:none;font-size:12px;">'
+        "Vous préférez WhatsApp ? Écrivez-nous</a>"
+    )
+
+
+def _lien_whatsapp_texte() -> str:
+    numero = normaliser_numero_whatsapp(settings.agence_whatsapp)
+    if numero is None:
+        return ""
+    return f"\nVous préférez WhatsApp ? Écrivez-nous : https://wa.me/{numero}"
+
+
 def construire_email(*, sujet: str, corps: str) -> tuple[str, str]:
     """Retourne (html, texte) prêts pour Brevo."""
     sujet_sur = _echapper(sujet)
@@ -159,7 +179,7 @@ def construire_email(*, sujet: str, corps: str) -> tuple[str, str]:
                           <span style="color:{TEXTE_SECONDAIRE};">Agence web · {_echapper(settings.agence_adresse)}</span><br>
                           <a href="tel:{_telephone_lien(settings.agence_telephone_1)}" style="color:{TEXTE};text-decoration:none;">{_echapper(settings.agence_telephone_1)}</a>
                           · <a href="tel:{_telephone_lien(settings.agence_telephone_2)}" style="color:{TEXTE};text-decoration:none;">{_echapper(settings.agence_telephone_2)}</a><br>
-                          <a href="{_echapper(settings.agence_site_web)}" style="color:{PRIMAIRE};text-decoration:none;">{_echapper(settings.agence_site_web.replace('https://', '').replace('http://', ''))}</a>
+                          <a href="{_echapper(settings.agence_site_web)}" style="color:{PRIMAIRE};text-decoration:none;">{_echapper(settings.agence_site_web.replace('https://', '').replace('http://', ''))}</a>{_lien_whatsapp_html()}
                         </td>
                       </tr>
                     </table>
@@ -201,7 +221,7 @@ def construire_email(*, sujet: str, corps: str) -> tuple[str, str]:
         f"—\n{settings.agence_signature}\n"
         f"Agence web · {settings.agence_adresse}\n"
         f"{settings.agence_telephone_1} · {settings.agence_telephone_2}\n"
-        f"{settings.agence_site_web}\n\n"
+        f"{settings.agence_site_web}{_lien_whatsapp_texte()}\n\n"
         "Pour ne plus être contacté, répondez « STOP » à cet email."
     )
     return html_email, texte

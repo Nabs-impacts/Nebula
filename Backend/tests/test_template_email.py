@@ -20,6 +20,25 @@ def test_template_email_contient_logo_da_et_cta():
     assert "STOP" in texte_email
 
 
+def test_template_email_ajoute_lien_whatsapp_si_configure(monkeypatch):
+    monkeypatch.setattr(settings, "agence_whatsapp", "87 77 39 82")
+
+    html_email, texte_email = construire_email(sujet="Une idée", corps="Bonjour,\n\nUne idée simple.")
+
+    assert "https://wa.me/22787773982" in html_email
+    assert "Vous préférez WhatsApp ? Écrivez-nous" in html_email
+    assert "https://wa.me/22787773982" in texte_email
+
+
+def test_template_email_sans_lien_whatsapp_si_non_configure(monkeypatch):
+    monkeypatch.setattr(settings, "agence_whatsapp", "")
+
+    html_email, texte_email = construire_email(sujet="Une idée", corps="Bonjour,\n\nUne idée simple.")
+
+    assert "wa.me" not in html_email
+    assert "Vous préférez WhatsApp" not in texte_email
+
+
 def test_template_email_retire_une_signature_existante():
     html_email, _ = construire_email(
         sujet="Votre site",

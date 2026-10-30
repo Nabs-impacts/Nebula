@@ -1,9 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Pencil, Send } from 'lucide-react'
+import { Check, MessageCircle, Pencil, Send } from 'lucide-react'
 import { CANAL_LABELS, STATUT_ENVOI_LABELS, formatDate } from '../../utils/formatters'
 import { fadeSlideUp } from '../../lib/motion'
-import { useApercuEmail } from '../../hooks/useMessages'
+import { useApercuEmail, useMarquerEnvoyeManuellement } from '../../hooks/useMessages'
+import { useToast } from '../common/Toast'
+import {
+  ajouterSignatureWhatsapp,
+  genererLienWaMe,
+  normaliserNumeroWhatsapp,
+} from '../../utils/whatsapp'
 
 const COULEUR_STATUT_ENVOI = {
   en_attente: '#e0a458',
@@ -11,15 +17,61 @@ const COULEUR_STATUT_ENVOI = {
   echec: '#d9695b',
 }
 
-export default function MessagePreview({ message, onModifier, onEnvoyer, envoiEnCours }) {
+export default function MessagePreview({
+  message,
+  numeroWhatsapp,
+  onModifier,
+  onEnvoyer,
+  envoiEnCours,
+}) {
   const contenu = message.contenu_final ?? message.contenu_genere
   const couleur = COULEUR_STATUT_ENVOI[message.statut_envoi] ?? '#a89b8c'
   const enAttente = message.statut_envoi === 'en_attente'
   const estEmail = message.canal === 'email'
+  const estWhatsapp = message.canal === 'whatsapp'
+  const dejaEnvoye = message.statut_envoi === 'envoye'
+  const numeroNormalise = estWhatsapp ? normaliserNumeroWhatsapp(numeroWhatsapp) : null
+  const lienWhatsapp =
+    estWhatsapp && !dejaEnvoye
+      ? genererLienWaMe(numeroNormalise, ajouterSignatureWhatsapp(contenu))
+      : null
   const [mode, setMode] = useState('texte')
+  const [clicWhatsapp, setClicWhatsapp] = useState(false)
+  const [demanderConfirmation, setDemanderConfirmation] = useState(false)
+  const marquerEnvoye = useMarquerEnvoyeManuellement(message.entreprise_id)
+  const toast = useToast()
   const { data: apercu, isLoading: apercuEnChargement } = useApercuEmail(message.id, {
     enabled: estEmail && mode === 'email',
   })
+
+  useEffect(() => {
+    if (!clicWhatsapp || dejaEnvoye) return
+
+    function surVisibilite() {
+      if (document.visibilityState === 'visible') {
+        setDemanderConfirmation(true)
+      }
+    }
+
+    document.addEventListener('visibilitychange', surVisibilite)
+    return () => document.removeEventListener('visibilitychange', surVisibilite)
+  }, [clicWhatsapp, dejaEnvoye])
+
+  async function gererMarquageManuel() {
+    try {
+      await marquerEnvoye.mutateAsync(message.id)
+      toast.succes('Message marqué comme envoyé.')
+      setDemanderConfirmation(false)
+      setClicWhatsapp(false)
+    } catch (erreur) {
+      const detail = erreur?.response?.data?.detail
+      toast.erreur(
+        typeof detail === 'string' && detail
+          ? detail
+          : 'Impossible de marquer ce message comme envoyé.',
+      )
+    }
+  }
 
   return (
     <motion.div
@@ -112,23 +164,101 @@ export default function MessagePreview({ message, onModifier, onEnvoyer, envoiEn
           </p>
         )}
 
-        <div className="mt-6 flex justify-end gap-2">
-          <button type="button" className="btn-secondary" onClick={onModifier}>
-            <Pencil size={14} /> Modifier
-          </button>
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={onEnvoyer}
-            disabled={envoiEnCours || message.statut_envoi === 'envoye'}
-          >
-            <Send size={14} />
-            {message.statut_envoi === 'envoye'
-              ? 'Déjà envoyé'
-              : envoiEnCours
-                ? 'Envoi…'
-                : 'Envoyer'}
-          </button>
+        {estWhatsapp && demanderConfirmation && !dejaEnvoye && (
+          <div className="mt-4 rounded-md border border-accent/30 bg-accent/[0.05] p-3.5">
+            <p className="text-sm font-medium text-ink">Message envoyé ?</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted">
+              Confirmez après avoir appuyé sur « Envoyer » dans WhatsApp.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={gererMarquageManuel}
+                disabled={marquerEnvoye.isPending}
+              >
+                <Check size={14} />
+                {marquerEnvoye.isPending ? 'Enregistrement…' : 'Oui, marquer comme envoyé'}
+              </button>
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => {
+                  setDemanderConfirmation(false)
+                  setClicWhatsapp(false)
+                }}
+                disabled={marquerEnvoye.isPending}
+              >
+                Pas encore
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-6 flex flex-col gap-2">
+          {estWhatsapp && !numeroNormalise && !dejaEnvoye && (
+            <p className="text-xs leading-relaxed text-danger">
+              Numéro WhatsApp absent ou invalide. Renseignez un numéro dans la fiche de
+              l’entreprise pour ouvrir WhatsApp.
+            </p>
+          )}
+
+          <div className="flex flex-wrap justify-end gap-2">
+            <button type="button" className="btn-secondary" onClick={onModifier}>
+              <Pencil size={14} /> Modifier
+            </button>
+
+            {estWhatsapp ? (
+              <>
+                {dejaEnvoye ? (
+                  <button type="button" className="btn-primary" disabled>
+                    <Send size={14} /> Déjà envoyé
+                  </button>
+                ) : lienWhatsapp ? (
+                  <a
+                    href={lienWhatsapp}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-primary"
+                    onClick={() => setClicWhatsapp(true)}
+                  >
+                    <MessageCircle size={14} /> Ouvrir dans WhatsApp
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    disabled
+                    title="Numéro WhatsApp absent ou invalide"
+                  >
+                    <MessageCircle size={14} /> Ouvrir dans WhatsApp
+                  </button>
+                )}
+
+                {!dejaEnvoye && (
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => setDemanderConfirmation(true)}
+                    disabled={marquerEnvoye.isPending}
+                  >
+                    <Check size={14} />
+                    {marquerEnvoye.isPending ? 'Enregistrement…' : 'Marquer comme envoyé'}
+                  </button>
+                )}
+              </>
+            ) : (
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={onEnvoyer}
+                disabled={envoiEnCours || dejaEnvoye}
+              >
+                <Send size={14} />
+                {dejaEnvoye ? 'Déjà envoyé' : envoiEnCours ? 'Envoi…' : 'Envoyer'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </motion.div>

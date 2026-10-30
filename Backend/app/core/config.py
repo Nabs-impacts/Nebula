@@ -47,6 +47,7 @@ class Settings(BaseSettings):
     agence_telephone_1: str = "87773982"
     agence_telephone_2: str = "80181172"
     agence_site_web: str = "https://tenora-digital.store"
+    agence_whatsapp: str = ""
     agence_preuve_clients: str = "plus d'une cinquantaine de clients satisfaits"
     agence_argument_prix: str = "des tarifs adaptés aux entreprises locales"
     agence_adresse: str = "Niamey, Niger"

@@ -157,6 +157,40 @@ def generer_relance_manuelle(
 # Si le volume augmente, `tache_envoyer_message` (app/workers/tasks_envoi.py)
 # et le worker RQ restent disponibles pour passer en asynchrone avec polling.
 
+@router.post("/{message_id}/marquer-envoye-manuellement", response_model=MessageOut)
+def marquer_envoye_manuellement(
+    message_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    _utilisateur=Depends(get_current_user),
+):
+    """Marque un message WhatsApp comme envoyé après un envoi manuel via wa.me.
+
+    Aucun appel à l'API Meta n'est effectué : l'utilisateur a ouvert WhatsApp,
+    envoyé le message lui-même, puis confirme l'envoi dans le panel.
+    """
+    message = message_service.obtenir_message(db, message_id)
+    if message is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message introuvable")
+
+    if message.canal != CanalMessage.WHATSAPP:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Seuls les messages WhatsApp peuvent être marqués comme envoyés manuellement",
+        )
+
+    if message.statut_envoi == StatutEnvoi.ENVOYE:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Ce message a déjà été marqué comme envoyé",
+        )
+
+    entreprise = entreprise_service.obtenir_entreprise(db, message.entreprise_id)
+    if entreprise is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Entreprise introuvable")
+
+    return envoi_service.marquer_message_envoye_manuellement(db, message, entreprise)
+
+
 @router.post("/{message_id}/envoyer", response_model=MessageOut)
 def envoyer_message(
     message_id: uuid.UUID,

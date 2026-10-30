@@ -34,6 +34,11 @@ def envoyer_message(db: Session, message: Message, entreprise: Entreprise) -> Me
         elif message.canal == CanalMessage.WHATSAPP:
             if not entreprise.whatsapp:
                 raise ValueError("Cette entreprise n'a pas de numéro WhatsApp enregistré")
+            if not settings.whatsapp_access_token:
+                raise ValueError(
+                    "L'envoi automatique WhatsApp n'est pas configuré. "
+                    "Utilisez « Ouvrir dans WhatsApp » puis marquez le message comme envoyé."
+                )
             envoyer_message_texte(entreprise.whatsapp, _avec_signature(contenu_brut))
         else:
             raise ValueError(f"Canal non supporté : {message.canal}")
@@ -49,6 +54,20 @@ def envoyer_message(db: Session, message: Message, entreprise: Entreprise) -> Me
         message_service.marquer_comme_echec(db, message)
         raise
 
+    return message
+
+
+def marquer_message_envoye_manuellement(db: Session, message: Message, entreprise: Entreprise) -> Message:
+    """Enregistre un envoi WhatsApp effectué manuellement hors API Meta.
+
+    Le message passe à ENVOYE et l'entreprise suit la même transition de statut
+    que pour un envoi automatique (EN_ATTENTE_REPONSE, ou RELANCE_ENVOYEE).
+    """
+    message_service.marquer_comme_envoye(db, message)
+    statut = (
+        StatutProspection.RELANCE_ENVOYEE if message.est_relance else StatutProspection.EN_ATTENTE_REPONSE
+    )
+    _mettre_a_jour_statut_entreprise(db, entreprise, statut)
     return message
 
 

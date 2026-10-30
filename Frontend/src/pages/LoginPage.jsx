@@ -32,7 +32,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-bg">
+    <div className="flex min-h-dvh bg-bg">
       <div className="relative hidden w-[46%] flex-col justify-between overflow-hidden border-r border-border bg-surface/40 p-12 lg:flex">
         <div className="pointer-events-none absolute -left-24 -top-24 h-80 w-80 rounded-full bg-accent/[0.07] blur-3xl" />
         <div className="pointer-events-none absolute -bottom-32 right-0 h-96 w-96 rounded-full bg-coral/[0.05] blur-3xl" />
@@ -117,7 +117,8 @@ export default function LoginPage() {
               erreur={erreurEmail}
               touche={toucheEmail}
               required
-              autoComplete="username"
+              autoComplete="email"
+              enterKeyHint="next"
               placeholder="user@tenora.ne"
             />
 

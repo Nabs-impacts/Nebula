@@ -1,9 +1,9 @@
-import { useState } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useAuth } from './hooks/useAuth'
 import Sidebar from './components/common/Sidebar'
 import Navbar from './components/common/Navbar'
+import BottomNav from './components/common/BottomNav'
 import ReponsesNotifier from './components/common/ReponsesNotifier'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
@@ -17,7 +17,7 @@ function RouteProtegee({ children }) {
 
   if (chargement) {
     return (
-      <div className="flex h-screen items-center justify-center bg-bg font-mono text-xs tracking-widest text-muted">
+      <div className="flex min-h-dvh items-center justify-center bg-bg font-mono text-xs tracking-widest text-muted">
         CHARGEMENT…
       </div>
     )
@@ -32,16 +32,15 @@ function RouteProtegee({ children }) {
 
 function LayoutApplication({ children }) {
   const location = useLocation()
-  const [menuOuvert, setMenuOuvert] = useState(false)
 
   return (
-    <div className="min-h-screen bg-bg text-ink">
+    <div className="min-h-dvh bg-bg text-ink">
       <ReponsesNotifier />
-      <Sidebar ouvert={menuOuvert} onFermer={() => setMenuOuvert(false)} />
+      <Sidebar />
 
-      <div className="flex min-h-screen min-w-0 flex-col lg:pl-64">
-        <Navbar onOuvrirMenu={() => setMenuOuvert(true)} />
-        <main className="flex-1 px-5 py-7 sm:px-8 lg:px-10 lg:py-9">
+      <div className="flex min-h-dvh min-w-0 flex-col lg:pl-64">
+        <Navbar />
+        <main className="flex-1 px-4 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-6 sm:px-8 lg:px-10 lg:pb-9 lg:pt-9">
           {/* Transition douce entre pages : fade + léger slide, jamais de
               scroll-jacking ni de mouvement sur width/height. */}
           <AnimatePresence mode="wait">
@@ -58,6 +57,8 @@ function LayoutApplication({ children }) {
           </AnimatePresence>
         </main>
       </div>
+
+      <BottomNav />
     </div>
   )
 }

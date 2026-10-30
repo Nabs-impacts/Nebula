@@ -144,6 +144,10 @@ export default function EntreprisesPage() {
           <div className="relative min-w-[220px] flex-1">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted/60" />
             <input
+              type="search"
+              inputMode="search"
+              autoComplete="off"
+              autoCapitalize="none"
               className="input w-full pl-9"
               placeholder="Rechercher un nom, email, contact, ville…"
               value={recherche}
@@ -155,7 +159,7 @@ export default function EntreprisesPage() {
             <button
               type="button"
               onClick={() => setVue('liste')}
-              className={`flex items-center gap-1.5 px-2.5 py-2 text-xs transition-colors ${
+              className={`flex min-h-11 items-center gap-1.5 px-2.5 py-2 text-xs transition-colors ${
                 vue === 'liste' ? 'bg-accent/10 text-accent' : 'text-muted hover:text-ink'
               }`}
               aria-label="Vue liste"
@@ -165,7 +169,7 @@ export default function EntreprisesPage() {
             <button
               type="button"
               onClick={() => setVue('kanban')}
-              className={`flex items-center gap-1.5 border-l border-border px-2.5 py-2 text-xs transition-colors ${
+              className={`flex min-h-11 items-center gap-1.5 border-l border-border px-2.5 py-2 text-xs transition-colors ${
                 vue === 'kanban' ? 'bg-accent/10 text-accent' : 'text-muted hover:text-ink'
               }`}
               aria-label="Vue kanban"

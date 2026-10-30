@@ -19,6 +19,17 @@ export default function FloatingField({
   touche = false,
   required = false,
   autoComplete,
+  autoCapitalize,
+  inputMode,
+  enterKeyHint,
+  name,
+  min,
+  max,
+  step,
+  rows,
+  pattern,
+  spellCheck,
+  disabled = false,
   textarea = false,
   placeholder,
 }) {
@@ -29,15 +40,31 @@ export default function FloatingField({
   const statutInvalide = touche && Boolean(erreur)
 
   const Composant = textarea ? 'textarea' : 'input'
+  const modeSaisie =
+    inputMode ?? (type === 'email' ? 'email' : type === 'tel' ? 'tel' : undefined)
+  const capitalisation =
+    autoCapitalize ??
+    (['email', 'password', 'url', 'number'].includes(type) ? 'none' : undefined)
 
   return (
     <div>
       <div className="relative">
         <Composant
           id={id}
+          name={name}
           type={textarea ? undefined : type}
           required={required}
           autoComplete={autoComplete}
+          autoCapitalize={capitalisation}
+          inputMode={modeSaisie}
+          enterKeyHint={enterKeyHint}
+          min={min}
+          max={max}
+          step={step}
+          rows={rows}
+          pattern={pattern}
+          spellCheck={spellCheck}
+          disabled={disabled}
           value={value}
           onChange={onChange}
           onFocus={() => setFocus(true)}
@@ -54,7 +81,7 @@ export default function FloatingField({
           htmlFor={id}
           className={`pointer-events-none absolute left-3 font-medium transition-all duration-150 ${
             flotte
-              ? 'top-1.5 text-[10px] font-medium uppercase tracking-[0.12em] text-muted'
+              ? 'top-1.5 text-xs font-medium uppercase tracking-[0.12em] text-muted'
               : `text-sm text-muted ${textarea ? 'top-2.5' : 'top-1/2 -translate-y-1/2'}`
           }`}
         >

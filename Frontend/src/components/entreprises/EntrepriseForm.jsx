@@ -133,11 +133,15 @@ export default function EntrepriseForm({
           onBlur={() => toucherChamp('email')}
           erreur={erreurs.email}
           touche={Boolean(champsTouches.email)}
+          autoComplete="email"
           placeholder="contact@entreprise.ne"
         />
 
         <FloatingField
           label="WhatsApp"
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
           value={valeurs.whatsapp}
           onChange={(e) => majChamp('whatsapp', e.target.value)}
           onBlur={() => toucherChamp('whatsapp')}
@@ -153,12 +157,14 @@ export default function EntrepriseForm({
           label="Nom du contact"
           value={valeurs.contact_nom}
           onChange={(e) => majChamp('contact_nom', e.target.value)}
+          autoComplete="name"
           placeholder="Ex : M. Issoufou"
         />
         <FloatingField
           label="Ville"
           value={valeurs.ville}
           onChange={(e) => majChamp('ville', e.target.value)}
+          autoComplete="address-level2"
           placeholder="Ex : Niamey"
         />
       </div>
@@ -253,6 +259,10 @@ export default function EntrepriseForm({
       {valeurs.presence_web === 'site_existant' && (
         <FloatingField
           label="URL du site existant"
+          type="url"
+          inputMode="url"
+          autoCapitalize="none"
+          autoComplete="url"
           value={valeurs.site_web}
           onChange={(e) => majChamp('site_web', e.target.value)}
           onBlur={() => toucherChamp('site_web')}

@@ -40,6 +40,7 @@ function FormulaireNouvelUtilisateur({ onCree }) {
         <input
           className="input"
           placeholder="Nom"
+          autoComplete="name"
           value={valeurs.nom}
           onChange={(e) => setValeurs((v) => ({ ...v, nom: e.target.value }))}
           required
@@ -47,6 +48,9 @@ function FormulaireNouvelUtilisateur({ onCree }) {
         <input
           className="input"
           type="email"
+          inputMode="email"
+          autoComplete="email"
+          autoCapitalize="none"
           placeholder="Email"
           value={valeurs.email}
           onChange={(e) => setValeurs((v) => ({ ...v, email: e.target.value }))}
@@ -55,12 +59,13 @@ function FormulaireNouvelUtilisateur({ onCree }) {
         <input
           className="input"
           type="password"
+          autoComplete="new-password"
           placeholder="Mot de passe"
           value={valeurs.mot_de_passe}
           onChange={(e) => setValeurs((v) => ({ ...v, mot_de_passe: e.target.value }))}
           required
         />
-        <label className="flex items-center gap-2 text-sm text-muted accent-accent">
+        <label className="flex min-h-11 items-center gap-2 text-sm text-muted accent-accent">
           <input
             type="checkbox"
             checked={valeurs.est_admin}
@@ -90,8 +95,8 @@ function GestionUtilisateurs() {
       {isError && <p className="text-sm text-danger">Impossible de charger les utilisateurs.</p>}
 
       {(isLoading || data) && (
-        <div className="card overflow-hidden">
-          <table className="w-full text-left text-sm">
+        <div className="card overflow-x-auto">
+          <table className="w-full min-w-[640px] text-left text-sm">
             <thead className="border-b border-border text-xs text-muted">
               <tr>
                 <th className="px-4 py-2 font-normal">Nom</th>

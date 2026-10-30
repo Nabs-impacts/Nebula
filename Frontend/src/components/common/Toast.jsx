@@ -53,7 +53,7 @@ export function ToastProvider({ children }) {
       {children}
 
       <div
-        className="pointer-events-none fixed bottom-4 right-4 z-[100] flex w-full max-w-sm flex-col gap-2"
+        className="pointer-events-none fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] left-4 right-4 z-[100] flex w-auto max-w-sm flex-col gap-2 sm:left-auto sm:right-4 lg:bottom-4"
         role="region"
         aria-label="Notifications"
       >
@@ -78,10 +78,10 @@ export function ToastProvider({ children }) {
                 <button
                   type="button"
                   onClick={() => retirerToast(toast.id)}
-                  className="shrink-0 text-muted transition-colors hover:text-ink"
+                  className="-m-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-sm text-muted transition-colors hover:text-ink"
                   aria-label="Fermer la notification"
                 >
-                  <X size={14} />
+                  <X size={16} />
                 </button>
               </motion.div>
             )

@@ -30,14 +30,32 @@
   box-sizing: border-box;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
+}
+
 html,
 body,
 #root {
   height: 100%;
 }
 
+#root {
+  min-height: 100dvh;
+}
+
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 body {
   margin: 0;
+  overflow-x: hidden;
   background-color: rgb(var(--color-bg-rgb));
   background-image:
     radial-gradient(ellipse at 12% -8%, rgba(224, 164, 88, 0.09), transparent 46%),
@@ -49,6 +67,22 @@ body {
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  overflow-wrap: break-word;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
 }
 
 ::selection {
@@ -86,7 +120,7 @@ body {
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-sm px-4 py-2.5 text-sm font-medium tracking-tight transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed;
+    @apply inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-sm px-4 py-2.5 text-sm font-medium tracking-tight transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed;
   }
 
   .btn-primary {
@@ -106,15 +140,15 @@ body {
   }
 
   .input {
-    @apply w-full bg-bg/40 border border-border rounded-sm px-3.5 py-2.5 text-sm text-ink placeholder:text-muted/60 focus:border-accent/70 focus:outline-none focus:ring-2 focus:ring-accent/10 transition-colors;
+    @apply w-full min-h-11 bg-bg/40 border border-border rounded-sm px-3.5 py-2.5 text-base text-ink placeholder:text-muted/60 focus:border-accent/70 focus:outline-none focus:ring-2 focus:ring-accent/10 transition-colors sm:text-sm;
   }
 
   .label {
-    @apply block text-[11px] font-medium uppercase tracking-[0.14em] text-muted mb-2;
+    @apply block text-xs font-medium uppercase tracking-[0.14em] text-muted mb-2;
   }
 
   .eyebrow {
-    @apply text-[11px] font-medium uppercase tracking-[0.2em] text-accent;
+    @apply text-xs font-medium uppercase tracking-[0.2em] text-accent;
   }
 
   .page-title {
@@ -126,7 +160,7 @@ body {
   }
 
   .mono-chip {
-    @apply font-mono text-[11px] tracking-tight;
+    @apply font-mono text-xs tracking-tight;
   }
 
   .skeleton {
@@ -166,6 +200,23 @@ body {
 
 .badge-pulse-dot {
   animation: badge-pulse 1.6s ease-in-out infinite;
+}
+
+/* Lisibilité mobile : aucun texte sous 12 px, champs à 16 px pour éviter
+   le zoom automatique de Safari sur iPhone. */
+.text-\[9px\],
+.text-\[10px\],
+.text-\[11px\] {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+@media (max-width: 639px) {
+  input:not([type='checkbox']):not([type='radio']),
+  textarea,
+  select {
+    font-size: 16px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
